@@ -1,0 +1,12 @@
+Gifted Brainz v11.3.5
+
+Fix: Show more / Show less state is now preserved across page re-renders.
+The Materials page periodically refreshes download state; previously that refresh
+collapsed an expanded list. The shared collapsible helper now remembers the open
+state for the lifetime of the page so re-renders do not close the list.
+
+Login page: unchanged in this patch.
+
+## v11.3.6 — Homepage Doodle Background
+- Updated the homepage background to use the supplied educational doodle strip as a repeating pattern.
+- Kept the existing homepage structure, controls, links, and install/login behavior unchanged.

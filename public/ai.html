@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082d63"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/assets/favicon.ico">
+<title>Gifted Brainz AI • EduSpace</title><link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="network-banner" id="networkBanner"></div>
+<div id="shell"><div class="main">
+  <div class="topbar"><div class="page-title"><span class="ic">✦</span> Gifted Brainz AI</div><div class="topbar-right"><span class="who" id="who"></span><button class="btn light" onclick="GB.logout()">Log out</button></div></div>
+  <div class="content ai-page">
+    <section class="ai-shell card">
+      <header class="ai-chat-head"><div class="ai-profile"><div class="ai-avatar">✦</div><div><strong>Gifted Brainz AI</strong><small>Learning assistant • Understanding first</small></div></div><div class="ai-head-actions"><button id="historyBtn" class="btn light" type="button">History</button><button id="newChat" class="btn light" type="button">New chat</button></div></header>
+      <div class="ai-modebar" aria-label="Learning modes"><button class="ai-mode active" data-mode="explain">Explain simply</button><button class="ai-mode" data-mode="hint">Give me a hint</button><button class="ai-mode" data-mode="example">Show an example</button><button class="ai-mode" data-mode="study">Teach this topic</button></div>
+      <div id="chat" class="ai-chat" aria-live="polite"></div><aside id="chatHistory" class="ai-history" hidden><div class="ai-history-head"><strong>Previous chats</strong><button id="closeHistory" class="btn light" type="button">Close</button></div><div id="historyList"></div></aside>
+      <div class="ai-compose"><div class="ai-context"><button id="contextToggle" class="context-toggle" type="button" aria-expanded="false">＋ Add question/context</button><div id="contextBox" hidden><textarea id="aiContext" rows="3" maxlength="6000" placeholder="Paste a question, your attempted answer, or useful context…"></textarea></div></div><div class="ai-input-row"><textarea id="aiQuestion" rows="1" maxlength="6000" placeholder="Ask Gifted Brainz AI anything you want to understand…"></textarea><button id="askAI" class="ai-send" type="button" aria-label="Send">➤</button></div><div class="ai-compose-note"><span>Enter to send • Shift + Enter for a new line</span><span>No cramming, just understanding.</span></div></div>
+    </section>
+  </div>
+</div></div>
+<script src="/app.js?v=12.1.9"></script><script src="/api.js?v=12.1.9"></script><script src="/gb-ui.js?v=12.1.9"></script>
+<script>
+GB.requireAuth();
+GBUI.mount({active:"/ai.html"});
+const $=id=>document.getElementById(id);
+let mode="explain",busy=false,currentChat=null,chatMessages=[];
+let historyCache=[];
+async function readHistory(){ try { const rows=await GB.api("/api/ai/chats"); historyCache=Array.isArray(rows)?rows:[]; return historyCache; } catch { return historyCache; } }
+async function saveCurrentChat(){
+  if(!chatMessages.length)return;
+  const title=(chatMessages.find(x=>x.role==="user")?.content||"New conversation").slice(0,160);
+  try {
+    const payload={title,messages:chatMessages.slice(-80)};
+    const item=currentChat ? await GB.api(`/api/ai/chats/${encodeURIComponent(currentChat)}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}) : await GB.api("/api/ai/chats",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+    currentChat=item.id; historyCache=[item,...historyCache.filter(x=>x.id!==item.id)].slice(0,50);
+  } catch {}
+}
+function addBubble(role,html,typing=false){const row=document.createElement("div");row.className="ai-msg-row "+role;const avatar=document.createElement("div");avatar.className="chat-avatar";avatar.textContent=role==="ai"?"✦":(($('who').textContent||"S").trim().charAt(0).toUpperCase());const bubble=document.createElement("div");bubble.className="chat-bubble";if(typing)bubble.innerHTML='<span class="typing"><i></i><i></i><i></i></span>';else bubble.innerHTML=html;row.append(avatar,bubble);$("chat").appendChild(row);$("chat").scrollTop=$("chat").scrollHeight;return bubble}
+function welcome(){currentChat=null;chatMessages=[];$("chat").innerHTML="";addBubble("ai",'<div class="chat-name">Gifted Brainz AI</div><p>Hi! Ask me a question and I’ll answer directly, clearly and only as fully as you need.</p><div class="suggestions"><button data-suggest="Explain simultaneous equations step by step.">Explain a difficult topic</button><button data-suggest="Give me a hint for solving this question.">Give me a hint</button><button data-suggest="Teach me this topic with an example.">Learn with an example</button></div>')}
+async function renderHistory(){const rows=await readHistory();$("historyList").innerHTML=rows.length?rows.map(x=>`<div class="history-row"><button class="history-item" type="button" data-history-id="${GBUI.esc(x.id)}"><b>${GBUI.esc(x.title)}</b><small>${new Date(x.updatedAt||Date.now()).toLocaleString()}</small></button><button class="btn light" type="button" data-delete-history="${GBUI.esc(x.id)}" aria-label="Delete conversation">✕</button></div>`).join(""):"<p class='muted'>No previous conversations yet.</p>"}
+async function openHistory(){await renderHistory();$("chatHistory").hidden=false}
+function closeHistory(){$("chatHistory").hidden=true}
+async function loadChat(id){
+  const item=historyCache.find(x=>x.id===id); if(!item)return;
+  currentChat=item.id;
+  // The list endpoint only carries id/title/updatedAt now (see
+  // readHistory()); a conversation's actual messages are fetched here,
+  // lazily, only when the student opens it.
+  let full;
+  try{ full=await GB.api(`/api/ai/chats/${encodeURIComponent(id)}`); }
+  catch(e){ $("chat").innerHTML=`<p class="error">${GBUI.esc(e.message)}</p>`; return; }
+  chatMessages=Array.isArray(full.messages)?full.messages:[];
+  $("chat").innerHTML="";
+  for(const m of chatMessages){
+    if(m.role==="user") addBubble("user",GBUI.esc(m.content).replace(/\n/g,"<br>"));
+    else {
+      const b=addBubble("ai",'<div class="chat-name">Gifted Brainz AI</div><div class="ai-answer-body gb-math-pending"></div>');
+      const target=b.querySelector(".ai-answer-body");
+      await renderAiAnswer(target,m.content);
+      target.classList.remove("gb-math-pending");
+    }
+  }
+  closeHistory();
+}
+GB.api("/api/dashboard").then(d=>$('who').textContent=d.user?.name||"").catch(()=>{});
+welcome(); readHistory().catch(()=>{});
+document.querySelectorAll(".ai-mode").forEach(b=>b.onclick=()=>{mode=b.dataset.mode;document.querySelectorAll(".ai-mode").forEach(x=>x.classList.remove("active"));b.classList.add("active")});
+$("historyBtn").onclick=openHistory;$("closeHistory").onclick=closeHistory;$("newChat").onclick=welcome;
+$("chatHistory").onclick=async e=>{const del=e.target.closest("[data-delete-history]");if(del){try{await GB.api(`/api/ai/chats/${encodeURIComponent(del.dataset.deleteHistory)}`,{method:"DELETE"});historyCache=historyCache.filter(x=>x.id!==del.dataset.deleteHistory);await renderHistory();}catch{}return;}const b=e.target.closest("[data-history-id]");if(b)loadChat(b.dataset.historyId)};
+$("contextToggle").onclick=()=>{const box=$("contextBox"),open=box.hidden;box.hidden=!open;$("contextToggle").setAttribute("aria-expanded",String(open));$("contextToggle").textContent=open?"− Hide question/context":"＋ Add question/context";if(open)$("aiContext").focus()};
+document.addEventListener("click",e=>{const b=e.target.closest("[data-suggest]");if(b){$("aiQuestion").value=b.dataset.suggest;$("aiQuestion").focus();}});
+function grow(){const x=$("aiQuestion");x.style.height="auto";x.style.height=Math.min(x.scrollHeight,150)+"px"}$("aiQuestion").addEventListener("input",grow);
+function renderAiAnswer(target, reply){
+  const clean=String(reply||"").replace(/^\s*[-_*]{3,}\s*$/gm,"").trim();
+  target.innerHTML=GBUI.renderBody(clean,"text");
+  const hasBareLatex=/\\[A-Za-z@]+/.test(target.textContent||"");
+  return GBUI.typesetMath?.().then(()=>{
+    // Some AI providers return bare TeX commands without math delimiters.
+    // MathJax cannot typeset those; convert any remaining raw commands to
+    // readable mathematical Unicode rather than showing TeX source.
+    if(hasBareLatex && /\\[A-Za-z@]+/.test(target.textContent||"")){
+      const plain=GBUI.mathToPlainText(clean);
+      target.textContent=plain;
+      target.innerHTML=GBUI.esc(plain).replace(/\n/g,"<br>");
+    }
+  }).catch(()=>{
+    if(hasBareLatex){
+      const plain=GBUI.mathToPlainText(clean);
+      target.textContent=plain;
+      target.innerHTML=GBUI.esc(plain).replace(/\n/g,"<br>");
+    }
+  });
+}
+
+async function send(){if(busy)return;const q=$("aiQuestion").value.trim();if(!q)return;busy=true;const context=$("aiContext").value.trim();chatMessages.push({role:"user",content:q});addBubble("user",GBUI.esc(q).replace(/\n/g,"<br>"));$("aiQuestion").value="";grow();const b=addBubble("ai","",true);try{const history=chatMessages.slice(0,-1).slice(-10);const x=await GB.api("/api/ai/tutor",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q,context,mode,history})});const reply=String(x.reply||"").trim();chatMessages.push({role:"assistant",content:reply});b.innerHTML='<div class="chat-name">Gifted Brainz AI</div><div class="ai-answer-body gb-math-pending"></div>';const target=b.querySelector(".ai-answer-body");const clean=reply.replace(/^\s*[-_*]{3,}\s*$/gm,"").trim();await renderAiAnswer(target,clean);try{}finally{target.classList.remove("gb-math-pending");}await saveCurrentChat();}catch(e){chatMessages.pop();b.innerHTML='<div class="chat-name">Gifted Brainz AI</div><p class="error">'+GBUI.esc(e.message||"Something went wrong. Please try again.")+'</p>'}finally{busy=false;$("aiQuestion").focus();$("chat").scrollTop=$("chat").scrollHeight}}
+$("askAI").onclick=send;$("aiQuestion").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}});
+window.addEventListener("beforeunload",saveCurrentChat);
+</script></body></html>

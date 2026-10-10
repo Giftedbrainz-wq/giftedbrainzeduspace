@@ -1,0 +1,5 @@
+Gifted Brainz v11.3.11
+- Fixed persistent HTML entity leakage in extracted question text.
+- Extractor now repeatedly decodes HTML/numeric entities, including double-encoded forms such as &amp;gt;, so literal &gt; no longer remains visible in extracted questions.
+- Added matching display-layer entity normalization so legacy imported questions with entity text render as normal characters in the admin/CBT views.
+- Preserved all existing passage/comprehension/cloze linking, shared-image handling, A–D option conversion, Roman-numeral detection and answer/reason extraction behavior.

@@ -1,0 +1,8 @@
+v11.3.13 — student identity, WhatsApp and extractor hardening
+- Extractor preserves DOCX superscript/subscript formatting as semantic <sup>/<sub> markup and converts common caret/underscore math notation safely.
+- Extracted question/option/explanation text is compacted to remove unnecessary gaps while preserving question structure.
+- Admin recent results now show the submitting student's name and username.
+- Student registration now requires a WhatsApp number; admins can open a direct WhatsApp chat from pending/student records.
+- Self-deleted accounts now release their username/email uniqueness reservations so those credentials can be registered again.
+- Registration also cleans up stale uniqueness reservations left by previously deleted accounts.
+- Passwords remain non-unique by design, so a password previously used by a deleted account can be used again.

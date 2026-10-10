@@ -1,0 +1,77 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0d2a5c"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/assets/favicon.ico"><link rel="apple-touch-icon" href="/assets/icon-192.png"><title>Join Gifted Brainz EduSpace</title><link rel="stylesheet" href="/styles.css"></head>
+<body><div class="network-banner" id="networkBanner"></div>
+<div class="formbox">
+  <div class="backnav"><a class="btn light" href="/">← Back to Home</a></div>
+  <img class="logo-full" src="/assets/logo-full.png" alt="Gifted Brainz EduSpace">
+  <h1>Create Student Account</h1>
+  <p class="muted">Create your secure EduSpace account. Some learning resources require account activation.</p>
+
+  <form id="f">
+    <div class="field"><label>Full name</label><input id="name" required maxlength="120"></div>
+    <div class="field"><label>Email</label><input id="email" type="email" autocomplete="email" required maxlength="160"></div>
+    <div class="field"><label>WhatsApp number</label><input id="whatsapp" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="+2348012345678"><small class="muted">Enter the number connected to WhatsApp, including your country code.</small></div>
+    <div class="field"><label>Username</label><input id="username" type="text" autocomplete="username" required maxlength="80"></div>
+    <div class="field"><label>Password</label><input id="password" type="password" autocomplete="new-password" minlength="8" required maxlength="200"><small class="muted">At least 8 characters. Keep it safe — an admin can reset it for you if you forget.</small></div>
+    <div class="field full"><label>Choose your subjects</label><div class="notice"><b>Use of English is compulsory.</b> Select up to 3 additional subjects. Maximum: 4 subjects total.</div>
+      <div class="subject-select-grid">
+        <label class="subject-choice"><input type="checkbox" name="subjects" value="Use of English" checked disabled> <span>📘 Use of English <small>Compulsory</small></span></label>
+        <label class="subject-choice"><input type="checkbox" name="subjects" value="Mathematics"> <span>➗ Mathematics</span></label>
+        <label class="subject-choice"><input type="checkbox" name="subjects" value="Physics"> <span>⚡ Physics</span></label>
+        <label class="subject-choice"><input type="checkbox" name="subjects" value="Chemistry"> <span>🧪 Chemistry</span></label>
+        <label class="subject-choice"><input type="checkbox" name="subjects" value="Biology"> <span>🌿 Biology</span></label>
+      </div><small id="subjectCount" class="muted">1 of 4 subjects selected</small>
+    </div>
+    <button class="btn primary" style="width:100%" id="go">Create Account</button>
+  </form>
+  <div id="done" hidden></div>
+  <a class="channel-banner channel-login-banner" href="https://whatsapp.com/channel/0029VbC1jX73QxRtsF3Kms3r" target="_blank" rel="noopener noreferrer"><span class="channel-icon">📱</span><span><b>Follow our WhatsApp Channel</b><small>Tap here — announcements &amp; learning updates instantly ✅</small></span><span class="channel-arrow">↗</span></a>
+  <p id="msg"></p>
+  <a class="btn light" style="width:100%;margin-top:10px" href="/login.html">← Back to Login</a>
+  <p class="muted" style="text-align:center;margin:12px 0 0;font-size:.84rem">Trouble registering? <a href="/help.html">Help &amp; Support</a></p>
+</div>
+<script src="/app.js?v=12.1.9"></script><script src="/api.js?v=12.1.9"></script><script>
+const form=document.getElementById("f"), nameInput=document.getElementById("name"), emailInput=document.getElementById("email"),
+  whatsappInput=document.getElementById("whatsapp"), usernameInput=document.getElementById("username"), passwordInput=document.getElementById("password"),
+  msg=document.getElementById("msg"), done=document.getElementById("done");
+let subjectBoxes=[...document.querySelectorAll('input[name="subjects"]')], subjectCount=document.getElementById("subjectCount");
+function selectedSubjects(){return subjectBoxes.filter(x=>x.checked).map(x=>x.value)}
+function refreshSubjects(){
+  const n=selectedSubjects().length; subjectCount.textContent=`${n} of 4 subjects selected`;
+  subjectBoxes.filter(x=>!x.checked).forEach(x=>x.disabled=n>=4);
+}
+async function loadSubjectChoices(){
+  try{
+    const rows=await GB.api("/api/subjects");
+    if(!Array.isArray(rows)||!rows.length)return;
+    const host=document.querySelector(".subject-select-grid");
+    if(!host)return;
+    const current=new Set(selectedSubjects());
+    host.innerHTML=rows.map((s,i)=>{
+      const name=String(s?.name||"").trim(); if(!name)return "";
+      const icon=String(s?.icon||"📘");
+      const compulsory=name==="Use of English";
+      const checked=compulsory||current.has(name);
+      return `<label class="subject-choice"><input type="checkbox" name="subjects" value="${GB.esc(name)}" ${checked?"checked":""} ${compulsory?"checked disabled":""}> <span>${GB.esc(icon)} ${GB.esc(name)}${compulsory?" <small>Compulsory</small>":""}</span></label>`;
+    }).join("");
+    subjectBoxes=[...document.querySelectorAll('input[name="subjects"]')];
+    subjectBoxes.forEach(x=>x.addEventListener("change",refreshSubjects));
+    refreshSubjects();
+  }catch{}
+}
+subjectBoxes.forEach(x=>x.addEventListener("change",refreshSubjects));
+refreshSubjects();
+loadSubjectChoices();
+
+form.addEventListener("submit",async e=>{
+  e.preventDefault(); msg.textContent=""; msg.className="";
+  if(passwordInput.value.length<8){ msg.className="error"; msg.textContent="Password must be at least 8 characters."; return }
+  document.getElementById("go").disabled=true;
+  try{
+    const j=await GB.api("/api/register",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name:nameInput.value,email:emailInput.value,whatsapp:whatsappInput.value,username:usernameInput.value,password:passwordInput.value,selectedSubjects:selectedSubjects()})});
+    form.hidden=true; done.hidden=false;
+    done.innerHTML=`<div class="notice success"><b>Account created successfully ✓</b><p style="margin:8px 0;line-height:1.6">${GB.esc(j.message||"Your account has been created successfully.")}</p><div class="card" style="margin-top:12px"><b>Your Device ID</b><div class="mono" style="font-size:1rem;margin-top:5px">${GB.esc(j.deviceId||j.user?.deviceId||"—")}</div><b style="display:block;margin-top:12px">Your Product Key</b><div class="mono" style="font-size:1rem;margin-top:5px">${GB.esc(j.productKey||j.user?.productKey||"—")}</div><small class="muted">Keep these details safe. Your Product Key is used for activation requests.</small></div></div><a class="btn primary" style="width:100%;margin-top:10px" href="/login.html">Continue to Login →</a>`;
+  }catch(err){ msg.className="error"; msg.textContent=err.message }
+  finally{ document.getElementById("go").disabled=false }
+});
+</script></body></html>

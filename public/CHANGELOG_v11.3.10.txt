@@ -1,0 +1,9 @@
+Gifted Brainz v11.3.10 — Linked Practice Groups
+
+Question-bank practice now keeps linked question groups atomic:
+- Questions sharing a Passage Group ID are selected and presented together.
+- A student cannot receive only one question from a shared passage/diagram/cloze group when practicing a new set.
+- Group questions remain contiguous and in their original question order inside the group.
+- If a requested practice-set size would split a linked group, the system skips that group and continues selecting other complete groups; if no smaller complete group is available, the first complete linked group is used in full.
+- Existing shared passage and image data remain attached to every question in the group, so the same material stays visible while moving through the linked questions.
+- Existing extractor behavior for comprehension, cloze, linked ranges, automatic images, A–D options, HTML-entity cleanup and Roman-numeral questions is preserved.

@@ -1,0 +1,8 @@
+Gifted Brains EduSpace — v11.3.7
+
+Question extractor fixes
+
+- Decode HTML non-breaking-space entities (&nbsp;, &#160;, &#xA0;) before storing extracted questions, so literal entity text no longer appears in CBT/question-bank questions.
+- Decode common HTML entities and numeric character references consistently during document extraction.
+- Automatically detect imported Roman-numeral questions containing I., II., III. and IV. and preserve the question as Roman-numeral format.
+- Verified the supplied spring-balance/chemical-balance example extracts as one question with four options, no literal &nbsp; text, and roman=true.

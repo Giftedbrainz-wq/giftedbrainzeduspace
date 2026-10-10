@@ -1,0 +1,9 @@
+Gifted Brainz v11.3.9 — Question Extractor Passage & Four-Option Update
+
+- Standardized linked range instructions such as “Use Fig. 1 to answer questions 2–4” into concise shared instructions (“Use the diagram below to answer the questions that follow.”) while retaining the linked question group internally.
+- Added automatic detection of comprehension and passage groups from headings such as COMPREHENSION and PASSAGE I/II/etc.
+- Added automatic cloze-group detection for instructions such as “In Questions 78 to 81 fill in the right word/phrase” and cloze headings.
+- Preserved shared passages/information and linked them to every question in the group.
+- Source A–E questions are now converted to exactly four stored options A–D by folding option E into D; an original E answer is remapped to D.
+- Updated extraction reporting/UI copy to reflect the four-option rule and show detected comprehension/cloze groups.
+- Preserved existing HTML-entity cleanup, Roman-numeral detection, and automatic image attachment behavior.

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082d63">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icon-192.png">
+<title>Learning Materials • Gifted Brainz EduSpace</title>
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div class="network-banner" id="networkBanner"></div>
+<div id="shell">
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title"><span class="ic">📚</span> Learning Materials</div>
+      <div class="topbar-right"><span class="who" id="who"></span><button class="btn light" onclick="GB.logout()">Log out</button></div>
+    </div>
+    <div class="content">
+      <p class="muted">Every note and file published by your tutors lives here — search your materials and either view notes in the app or download attached files.
+         Pick a subject session below. Long lists collapse, so use <b>Show more</b> to see the rest.</p>
+      <div class="tabs" id="tabs"></div>
+      <div class="field full" style="margin-top:14px">
+        <label for="materialSearch">Search learning materials</label>
+        <input id="materialSearch" type="search" maxlength="120" placeholder="Search by title, topic, subject or keyword…" autocomplete="off">
+      </div>
+      <div id="out"><p class="muted">Loading materials…</p></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+  <div class="modal-box">
+    <div class="modal-head">
+      <h2 id="mTitle"></h2>
+      <button class="btn light" type="button" id="mClose">✕ Close</button>
+    </div>
+    <div class="modal-body" id="mBody"></div>
+  </div>
+</div>
+
+<script src="/app.js?v=12.1.9"></script><script src="/api.js?v=12.1.9"></script><script src="/gb-ui.js?v=12.1.9"></script>
+<script>
+GB.requireAuth();
+GBUI.mount({active:"/materials.html"});
+const $=id=>document.getElementById(id);
+let items=[], current=new URLSearchParams(location.search).get("subject")||"All", searchTerm=new URLSearchParams(location.search).get("search")||"";
+
+const dateOf=m=>{const d=new Date(m.createdAt||m.updatedAt||Date.now());return isNaN(d)?"":d.toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})};
+
+const downloadKey = (m, f) => `material:${m.id}:file:${f.key || f.url || f.fileName || "attachment"}`;
+const materialKeys = m => (m.attachments||[]).map(f => downloadKey(m,f));
+const downloadedCache = new Map();
+async function isMaterialDownloaded(m){
+  const files=m.attachments||[];
+  if(!files.length) return false;
+  const key=`material:${m.id}:all`;
+  if(downloadedCache.has(key)) return downloadedCache.get(key);
+  const states=await Promise.all(materialKeys(m).map(k=>GB.materialDownloadExists(k)));
+  const yes=states.length>0 && states.every(Boolean);
+  downloadedCache.set(key, yes);
+  return yes;
+}
+
+function card(m){
+  const files=(m.attachments||[]).length;
+  const downloaded=downloadedCache.get(`material:${m.id}:all`)===true;
+  return `<article class="matcard ${m.locked?"locked-card":""}">
+    <div class="matmeta"><span class="pill">${GBUI.SUBJECT_ICONS[m.subject]||"📗"} ${GBUI.esc(m.subject||"General")}</span><small>${dateOf(m)}</small></div>
+    <h3>${m.locked?"🔒 ":""}${GBUI.esc(m.title||"Untitled material")}</h3>
+    ${m.summary?`<p class="muted">${GBUI.esc(m.summary)}</p>`:""}
+    <div class="matactions">
+      ${m.locked?`<button class="btn light" type="button" data-activate="${GBUI.esc(m.id)}">🔒 Activate to access</button>`:(files
+        ? (downloaded
+          ? `<button class="btn bg-green" type="button" data-check-download-material="${GBUI.esc(m.id)}">✓ Material downloaded</button>`
+          : `<button class="btn gold" type="button" data-download-material="${GBUI.esc(m.id)}">Download${files>1?" files":""}</button>`)
+        : `<button class="btn primary" type="button" data-open="${GBUI.esc(m.id)}">View in app</button>`)}
+      <small class="muted">${files?files+" file"+(files===1?"":"s")+" attached":"Note only"}</small>
+    </div>
+  </article>`;
+}
+
+function render(){
+  const scoped=current==="All"?items:items.filter(m=>(m.subject||"General")===current);
+  const term=searchTerm.trim().toLowerCase();
+  const list=term?scoped.filter(m=>[m.title,m.summary,m.topic,m.subject,m.body].some(v=>String(v||"").toLowerCase().includes(term))):scoped;
+  const sorted=[...list].sort((a,b)=>String(b.createdAt||"").localeCompare(String(a.createdAt||"")));
+  $("tabs").innerHTML=["All",...GBUI.mySubjects()].map(s=>{
+    const n=s==="All"?items.length:items.filter(m=>(m.subject||"General")===s).length;
+    return `<button class="tab ${s===current?"on":""}" type="button" data-tab="${GBUI.esc(s)}">${s==="All"?"🗂️":GBUI.SUBJECT_ICONS[s]} ${GBUI.esc(s)} <span class="count">${n}</span></button>`;
+  }).join("");
+  const heading=current==="All"?"All materials":GBUI.esc(current);
+  const suffix=term?` — ${list.length} result${list.length===1?"":"s"}`:"";
+  $("out").innerHTML=`<div class="section-head"><h2>${heading}${suffix}</h2></div>`+
+    (sorted.length?GBUI.collapsible("more-"+current.replace(/\W/g,""), sorted.map(card)):`<p class="muted">No learning materials match your search.</p>`);
+}
+
+async function refreshDownloadStates(){
+  const mats=items.filter(m => Array.isArray(m.attachments) && m.attachments.length);
+  await Promise.all(mats.map(async m => { await isMaterialDownloaded(m); }));
+  render();
+}
+
+function showActivationNotice(resource,price=3000){
+  $("mTitle").textContent="Activation Required";
+  $("mBody").innerHTML=`<div class="notice" style="padding:18px"><h3 style="margin-top:0">🔒 This resource is for activated students</h3><p>${GBUI.esc(resource)} is available only to students with an activated account.</p><p style="font-size:1.08rem"><b>Activate your account for ₦${Number(price).toLocaleString("en-NG")}.</b></p><p class="muted">Use your Product Key to contact the Gifted Brainz coordinator. Your activation is handled by the admin.</p><a class="btn gold" href="/activation.html">Activate Account →</a></div>`;
+  $("modal").hidden=false; document.body.classList.add("noscroll");
+}
+
+document.addEventListener("click",async e=>{
+  const activate=e.target.closest("[data-activate]");
+  if(activate){ const m=items.find(x=>String(x.id)===String(activate.dataset.activate)); showActivationNotice(m?.title||"this material",Number(m?.activationPrice)||3000); return; }
+  const t=e.target.closest("[data-tab]");
+  if(t){ current=t.dataset.tab; history.replaceState(null,"",`?subject=${encodeURIComponent(current)}${searchTerm?"&search="+encodeURIComponent(searchTerm):""}`); render(); return; }
+  const o=e.target.closest("[data-open]");
+  if(o){ open(o.dataset.open); return; }
+  const c=e.target.closest("[data-check-download-material]");
+  if(c){
+    const m=items.find(x=>String(x.id)===String(c.dataset.checkDownloadMaterial));
+    if(m){ downloadedCache.delete(`material:${m.id}:all`); const yes=await isMaterialDownloaded(m); if(!yes) render(); }
+    return;
+  }
+  const d=e.target.closest("[data-download-material]");
+  if(d){
+    const m=items.find(x=>String(x.id)===String(d.dataset.downloadMaterial));
+    if(!m || !Array.isArray(m.attachments) || !m.attachments.length) return;
+    const files=m.attachments;
+    try {
+      GBUI.showDownloadProgress(files.length===1 ? (files[0].fileName || "Material") : `${files.length} material files`, 0);
+      for(let i=0;i<files.length;i++){
+        const f=files[i];
+        GBUI.updateDownloadProgress(0, files.length>1 ? `Downloading ${i+1} of ${files.length}: ${f.fileName||"Attachment"}` : "Starting download…");
+        await GB.download(f.url, f.fileName || "material-download", (pct,label)=>{
+          const overall=((i + Math.max(0, Math.min(100, Number(pct)||0)/100))/files.length)*100;
+          GBUI.updateDownloadProgress(overall, files.length>1 ? `Downloading ${i+1} of ${files.length}: ${label||""}` : label);
+        }, { persistent: true, persistKey: downloadKey(m, f), directoryKey: files.length > 1 ? `material:${m.id}:directory` : "", contentType: f.contentType || "application/octet-stream" });
+      }
+      downloadedCache.set(`material:${m.id}:all`, true);
+      GBUI.finishDownloadProgress(true);
+      render();
+    } catch(err){
+      GBUI.finishDownloadProgress(false, err?.message || "Download failed.");
+    }
+  }
+});
+
+function open(id){
+  const m=items.find(x=>String(x.id)===String(id));
+  if(!m) return;
+  $("mTitle").textContent=m.title||"Material";
+  $("mBody").innerHTML=`<div class="matmeta"><span class="pill">${GBUI.SUBJECT_ICONS[m.subject]||"📗"} ${GBUI.esc(m.subject||"General")}</span><small>${dateOf(m)}</small></div>`+
+    `<div class="rich">${GBUI.renderBody(m.body,m.bodyFormat)||"<p class='muted'>No written note for this material.</p>"}</div>`+
+    GBUI.files(m.attachments||[]);
+  $("modal").hidden=false;
+  document.body.classList.add("noscroll");
+}
+const close=()=>{$("modal").hidden=true;document.body.classList.remove("noscroll")};
+$("mClose").onclick=close;
+$("materialSearch").value=searchTerm;
+$("materialSearch").addEventListener("input",e=>{searchTerm=e.target.value;history.replaceState(null,"",`?subject=${encodeURIComponent(current)}${searchTerm?"&search="+encodeURIComponent(searchTerm):""}`);render()});
+$("modal").addEventListener("click",e=>{if(e.target.id==="modal")close()});
+addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+
+const onlyMySubjects=list=>{const allowed=new Set(GBUI.mySubjects());return list.filter(m=>allowed.has(m.subject||"General"))};
+let subjectRenderQueued=false;
+window.addEventListener("gb:subjects-updated",()=>{
+  if(subjectRenderQueued)return; subjectRenderQueued=true;
+  queueMicrotask(()=>{subjectRenderQueued=false;render();});
+});
+window.addEventListener("focus", () => { void refreshDownloadStates(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) void refreshDownloadStates(); });
+
+GB.requireAuth().then(ok=>ok ? GB.api("/api/materials") : null).then(async d=>{ if(!d) return;items=onlyMySubjects(Array.isArray(d)?d:(d.items||[]));render(); await refreshDownloadStates();}).catch(()=>render())
+  .catch(e=>{$('out').innerHTML=`<p class="error">${GBUI.esc(e.message)}</p>`});
+</script>
+</body>
+</html>

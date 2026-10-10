@@ -1,0 +1,6 @@
+v11.3.14 — final QA, request isolation and concurrency hardening
+- Request environment/client-IP context is now isolated per async request with Node AsyncLocalStorage; concurrent warm-process requests cannot overwrite one another’s context.
+- Read-heavy API traffic uses a very short per-instance data cache while write requests continue to bypass the cache. This reduces repeated >1 MB central-blob reads during classroom login/dashboard/test bursts.
+- Successful saves refresh the local cache immediately, keeping the warm instance hot with the latest revision.
+- Preserved central EdgeOne Blob as the production source of truth; no per-instance production fallback was introduced.
+- Final QA checks cover JavaScript syntax, EdgeOne layout, registration/WhatsApp flows, admin student identity display, deletion/reuse paths, extractor notation handling, and archive integrity.

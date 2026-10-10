@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#082d63">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icon-192.png">
+<title>My Account • Gifted Brainz EduSpace</title>
+<link rel="stylesheet" href="/styles.css"><style>
+.account-page{max-width:1180px;margin:0 auto;width:100%}.account-page .card{min-width:0;overflow:hidden}.account-page .kv{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}.account-page .kv div{min-width:0}.account-page .kv b{display:block;overflow-wrap:anywhere;word-break:break-word;line-height:1.45}.account-page .formgrid{min-width:0}.account-page textarea,.account-page input,.account-page select{max-width:100%;min-width:0}.account-page .subject-select-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,180px),1fr))}.account-page .field.wide{grid-column:span 2}@media(max-width:680px){.account-page .card{padding:16px}.account-page .kv{grid-template-columns:1fr}.account-page .factions{width:100%}.account-page .field.wide{grid-column:span 1}}
+</style>
+</head>
+<body>
+<div class="network-banner" id="networkBanner"></div>
+<div id="shell">
+  <div class="main">
+    <div class="topbar">
+      <div class="page-title"><span class="ic">👤</span> My Account</div>
+      <div class="topbar-right"><span class="who" id="who"></span><button class="btn light" onclick="GB.logout()">Log out</button></div>
+    </div>
+    <div class="content account-page">
+      <section class="card">
+        <div class="section-head"><h2>Your Details</h2></div>
+        <div class="kv" id="kv"></div>
+      </section>
+
+<section class="card">
+        <div class="section-head"><h2>Edit Profile</h2></div>
+        <form id="profileForm" class="formgrid">
+          <div class="field"><label>Full name</label><input id="pname" maxlength="120" required></div>
+          <div class="field"><label>Username</label><input id="pusername" maxlength="80" required></div>
+          <div class="field wide"><label>Email</label><input id="pemail" type="email" maxlength="160" required></div>
+          <div class="field full"><label>Your subjects</label><div class="notice">Your subjects are assigned by your administrator. Contact them if a subject needs to change.</div><div id="profileSubjects" class="subject-select-grid readonly"></div></div>
+          <button class="btn primary">Save profile</button>
+        </form><p id="profileMsg"></p>
+      </section>
+
+      <section class="card">
+        <div class="section-head"><h2>Install the App</h2></div>
+        <p class="muted">Install Gifted Brainz on your device for quicker access. Updates arrive automatically and silently.</p>
+        <button id="install" class="btn gold" type="button" hidden>Install App</button>
+        <p class="muted" id="installNote"></p>
+      </section>
+
+      <section class="card">
+        <div class="section-head"><h2>Delete My Account</h2></div>
+        <p class="muted">This is permanent. Your student profile and all CBT results attached to this account will be removed from the database. To continue, enter your exact username and current password.</p>
+        <form id="deleteForm" class="formgrid">
+          <div class="field"><label>Username</label><input id="delUser" autocomplete="username" required maxlength="80"></div>
+          <div class="field"><label>Password</label><input id="delPass" type="password" autocomplete="current-password" required maxlength="200"></div>
+          <button class="btn danger">Permanently delete account</button>
+        </form>
+        <p id="delMsg"></p>
+      </section>
+
+      <section class="card">
+        <div class="section-head"><h2>Sign Out</h2></div>
+        <p class="muted">Signing out clears your session from this device.</p>
+        <button class="btn light" onclick="GB.logout()">Log out of Gifted Brainz</button>
+      </section>
+    </div>
+  </div>
+</div>
+<script src="/app.js?v=12.1.9"></script><script src="/api.js?v=12.1.9"></script><script src="/gb-ui.js?v=12.1.9"></script>
+<script>
+GB.requireAuth();
+GBUI.mount({active:"/account.html"});
+const $=id=>document.getElementById(id);
+function renderAccount(u){
+  $("who").textContent=u.name||"";
+}
+GB.api("/api/dashboard").then(d=>{renderAccount(d.user);
+  $("kv").innerHTML=[["Full name",d.user.name],["Username",d.user.username],["Email",d.user.email||"—"],["Subjects",(d.user.selectedSubjects||["Use of English"]).join(", ")],["Tests taken",d.tests],["Average score",d.avg+"%"],["Overall rank","#"+(d.rank||0)]].map(([k,v])=>`<div><small>${k}</small><b>${GBUI.esc(v)}</b></div>`).join("");
+  $("pname").value=d.user.name||"";$("pusername").value=d.user.username||"";$("pemail").value=d.user.email||"";
+  // Subjects are administrator-controlled: this is a read-only display, not a
+  // selector. Changing it here would do nothing — the backend ignores
+  // selectedSubjects on a student's own profile update (see PATCH /api/me).
+  const renderProfileSubjects=(selected=d.user.selectedSubjects||["Use of English"])=>{
+    $("profileSubjects").innerHTML=selected.map(s=>`<span class="subject-chip">${GBUI.esc(GBUI.SUBJECT_ICONS[s]||"📗")} ${GBUI.esc(s)}</span>`).join("")||"<p class='muted'>No subjects assigned yet. Contact your administrator.</p>";
+  };
+  renderProfileSubjects();
+
+}).catch(e=>{$("kv").innerHTML=`<p class="error">${GBUI.esc(e.message)}</p>`});
+$("profileForm").addEventListener("submit",async e=>{e.preventDefault();const m=$("profileMsg");m.className="";m.textContent="";try{const d=await GB.api("/api/me",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:$("pname").value.trim(),username:$("pusername").value.trim(),email:$("pemail").value.trim()})});m.className="ok";m.textContent="Profile updated successfully.";setTimeout(()=>location.reload(),500)}catch(err){m.className="error";m.textContent=err.message}});
+$("deleteForm").addEventListener("submit",async e=>{e.preventDefault();const m=$("delMsg");m.className="";m.textContent="";const ok=await GBUI.confirmAction("Delete your account permanently?","This cannot be undone. Your profile and all CBT results connected to this account will be removed from the database.","Yes, delete my account");if(!ok)return;try{await GB.api("/api/me/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:$("delUser").value,password:$("delPass").value})});m.className="ok";m.textContent="Account deleted. Redirecting…";setTimeout(()=>location="/",700)}catch(err){m.className="error";m.textContent=err.message}});
+</script>
+</body></html>

@@ -1,0 +1,8 @@
+Gifted Brainz v11.3.8
+
+Question extractor improvements:
+- Detects linked question groups such as “Use Fig. 1 to answer questions 2–4.” and preserves them as a shared passage/group.
+- Automatically carries a shared figure/image into every linked question in the group.
+- Extracts embedded images from Word documents and supported embedded JPEG/JPEG2000 images from PDFs.
+- Automatically attaches extracted images to the relevant question or passage group.
+- Preserves existing answer, reason/explanation and Roman-numeral detection.

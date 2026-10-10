@@ -1,0 +1,776 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0d2a5c"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/assets/favicon.ico"><link rel="apple-touch-icon" href="/assets/icon-192.png"><title>CBT Centre • Gifted Brainz EduSpace</title><link rel="stylesheet" href="/styles.css"><style>
+.assessment-launch-card{max-width:900px;margin:24px auto 40px;position:relative;overflow:hidden;background:linear-gradient(145deg,#ffffff 0%,#f7fbff 56%,#fff9e7 100%);border:1px solid rgba(8,45,99,.14);box-shadow:0 24px 70px rgba(8,44,82,.14)}
+.assessment-launch-card:before{content:"";position:absolute;inset:-35% auto auto -15%;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(247,193,48,.20),transparent 70%);pointer-events:none}
+.assessment-brand{display:flex;align-items:center;gap:14px;justify-content:center;position:relative;z-index:1;margin-bottom:18px;padding:4px}
+.assessment-brand-icon{width:74px;height:74px;object-fit:contain;filter:drop-shadow(0 8px 20px rgba(8,45,99,.18))}
+.assessment-brand-name{font-weight:950;letter-spacing:.04em;color:#082d63;text-align:left;line-height:1.02}.assessment-brand-name b{color:#f1bc34}.assessment-brand-name small{display:block;color:#082d63;font-size:.68rem;letter-spacing:.15em;margin-top:7px}
+.assessment-detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:18px 0 20px}
+.assessment-detail-grid span{padding:14px 10px;border-radius:16px;background:rgba(8,45,99,.045);text-align:center;border:1px solid rgba(8,45,99,.08)}
+.assessment-detail-grid b{display:block;font-size:1.18rem;color:#082d63}.assessment-detail-grid small{display:block;margin-top:3px;color:#5d6b85}
+.assessment-instructions{margin:12px 0 10px;padding:14px 16px;border-radius:16px;background:rgba(8,45,99,.045);border:1px solid rgba(8,45,99,.09);color:#183557;line-height:1.65;text-align:left}.assessment-instructions p{margin:.55rem 0 0}
+.assessment-launch-topbar{position:relative;z-index:1;margin-bottom:10px}
+.assessment-launch-heading{text-align:center;position:relative;z-index:1;margin-bottom:6px}
+.assessment-launch-heading h2{margin:6px 0 10px}
+.assessment-start-wrap{text-align:center;margin-top:10px}
+.exam-section-banner{margin:0 18px 16px}
+.exam-section-banner.roman{background:#fff7e6;border:1px solid #f0c75e;color:#6b4e06}
+.exam-section-banner.roman b{color:#8a6300}
+.assessment-start-btn{min-width:260px;padding:17px 28px;border:0;border-radius:999px;background:linear-gradient(135deg,#f4c84a,#dda900);color:#082d63;font-weight:950;font-size:1.05rem;letter-spacing:.01em;box-shadow:0 0 0 1px rgba(214,160,0,.2),0 10px 24px rgba(214,160,0,.25),0 0 30px rgba(244,200,74,.30);transition:transform .2s ease,box-shadow .2s ease}.assessment-start-btn:hover{transform:translateY(-2px);box-shadow:0 0 0 1px rgba(214,160,0,.28),0 14px 30px rgba(214,160,0,.34),0 0 42px rgba(244,200,74,.42)}
+.assessment-play{display:inline-block;width:0;height:0;border-top:9px solid transparent;border-bottom:9px solid transparent;border-left:14px solid #082d63;vertical-align:-2px;margin-right:9px}
+@media(max-width:680px){.assessment-detail-grid{grid-template-columns:1fr 1fr}.assessment-start-btn{width:100%;min-width:0}.assessment-brand{justify-content:flex-start}.assessment-brand-icon{width:60px;height:60px}}</style></head>
+<body><div class="network-banner" id="networkBanner"></div>
+<div id="shell"><div class="main"><div class="topbar"><div class="page-title"><span class="ic">🎯</span> CBT Arena</div><div class="topbar-right"><button class="btn light" onclick="GB.logout()">Log out</button></div></div><div class="content"><div id="app"><p class="muted">Loading CBT Arena…</p></div></div></div></div>
+<div id="exam" class="exam-shell" hidden></div>
+<div id="modalHost"></div>
+<script src="/app.js?v=12.1.9"></script><script src="/api.js?v=12.1.9"></script><script src="/gb-ui.js?v=12.1.9"></script><script>
+GB.requireAuth();
+GBUI.mount({active:"/cbt.html"});
+
+const $=id=>document.getElementById(id);
+const params=new URLSearchParams(location.search), testId=params.get("id"), reviewId=params.get("review"), bankMode=params.get("bank");
+const esc=GBUI.esc;
+function safeArenaReturn(raw){const value=String(raw||"");return /^\/cbt\.html(?:[?#]|$)/i.test(value)?value:"/cbt.html";}
+const arenaReturnUrl=safeArenaReturn(params.get("return"));
+const currentArenaUrl=()=>location.pathname+location.search+location.hash;
+const arenaLink=()=>safeArenaReturn(S?.returnUrl||arenaReturnUrl||"/cbt.html");
+const shellEl=$("shell"), examEl=$("exam");
+const me={};
+
+/* ------------------------------------------------------------------
+   Live exam state. One engine drives both mock tests and the
+   question bank so both look and behave exactly the same way.
+------------------------------------------------------------------- */
+let S=null, interval=null;
+
+function newState(cfg){
+  return {
+    kind:cfg.kind, title:cfg.title, subject:cfg.subject, subtitle:cfg.subtitle||"",
+    questions:cfg.questions, sections:Array.isArray(cfg.sections)?cfg.sections:[], sessionId:cfg.sessionId||"", mode:cfg.mode||"practice",
+    duration:cfg.duration||0, timed:!!cfg.timed,
+    answers:Array(cfg.questions.length).fill(null), flags:Array(cfg.questions.length).fill(false),
+    current:0, seconds:(cfg.duration||0)*60, elapsed:0, submitted:false, calcOpen:false, studentForm:cfg.studentForm||{}, returnUrl:cfg.returnUrl||arenaReturnUrl
+  };
+}
+addEventListener("beforeunload",e=>{if(S&&!S.submitted){e.preventDefault();e.returnValue=""}});
+
+/* ------------------------------- helpers ------------------------------ */
+const clock=t=>{const h=Math.floor(t/3600),m=Math.floor(t%3600/60),s=t%60;return (h?String(h).padStart(2,"0")+":":"00:")+String(m).padStart(2,"0")+":"+String(s).padStart(2,"0")};
+const letter=i=>String.fromCharCode(65+i);
+const answeredCount=()=>S.answers.filter(v=>v!==null).length;
+function showActivationNotice(resource,price=3000){
+  const host=$("modalHost");
+  host.innerHTML=`<div class="modal" style="display:grid;place-items:center;padding:20px"><div class="modal-box" style="max-width:520px"><div class="modal-head"><h2>Activation Required</h2><button class="btn light" type="button" data-close-activation>✕ Close</button></div><div class="modal-body"><div class="notice"><h3 style="margin-top:0">🔒 Activated account required</h3><p>${esc(resource||"This assessment")} is available only to activated students.</p><p style="font-size:1.08rem"><b>Activate your account for ₦${Number(price).toLocaleString("en-NG")}.</b></p><p class="muted">Use your Product Key to contact the coordinator and complete activation.</p><a class="btn gold" href="/activation.html">Activate Account →</a></div></div></div></div>`;
+  host.querySelector("[data-close-activation]")?.addEventListener("click",()=>host.innerHTML="");
+}
+function examBrand(){return `<a class="exam-brand" href="/dashboard.html" title="Gifted Brainz EduSpace"><img src="/assets/icon-light.png" alt=""><span>GIFTED BRAINZ<small>EDUSPACE</small></span></a>`}
+
+/* ---------------------------- the exam room --------------------------- */
+/* --------------------------- student copy --------------------------- */
+function cleanCopyText(value){
+  let text=String(value||"");
+  // Remove renderer tags/entities, then translate TeX to readable clipboard text.
+  text=text.replace(/<br\s*\/?>/gi,"\n").replace(/<[^>]*>/g,"").replace(/&nbsp;/gi," ");
+  if(window.GBUI?.mathToPlainText) text=window.GBUI.mathToPlainText(text);
+  return text.replace(/\r/g,"").replace(/[ \t]+/g," ").replace(/\n\s*\n\s*\n+/g,"\n\n").trim();
+}
+function copyQuestionText(q, review){
+  const lines=[];
+  if(q?.passage) lines.push(cleanCopyText(q.passage),"");
+  lines.push(cleanCopyText(q?.q||""));
+  (q?.options||[]).slice(0,4).forEach((o,i)=>lines.push(`${"ABCD"[i]}. ${cleanCopyText(o)}`));
+  if(review){
+    const correctIndex=Number.isInteger(Number(review.answer))?Number(review.answer):null;
+    const chosenIndex=Number.isInteger(Number(review.chosen))?Number(review.chosen):null;
+    lines.push("",`Your Answer: ${chosenIndex===null?"Not answered":letter(chosenIndex)}`);
+    lines.push(`Correct Answer: ${correctIndex===null?"Not available":letter(correctIndex)+(review.options?.[correctIndex]?`. ${cleanCopyText(review.options[correctIndex])}`:"")}`);
+    if(review.explanation) lines.push("",`Explanation:\n${cleanCopyText(review.explanation)}`);
+  }
+  if(q?.image && review) lines.splice(0,0,"[Diagram/Image included in this question]");
+  else if(q?.image) lines.push("","[Diagram/Image included in this question]");
+  return lines.join("\n");
+}
+async function copyRichQuestion(q, review){
+  const text=copyQuestionText(q,review);
+  const escHtml=(v)=>cleanCopyText(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  let imageData="";
+  try{
+    const imgKey=q?.image?.key||q?.image?.fileKey;
+    if(imgKey){
+      const blobUrl=await GB.fileBlobUrl(q.image.url||(`/api/files/${encodeURIComponent(imgKey)}`),{contentType:q.image.contentType||"image/*"});
+      const blob=await fetch(blobUrl).then(r=>r.ok?r.blob():null);
+      if(blob){
+        imageData=await new Promise(resolve=>{const fr=new FileReader();fr.onload=()=>resolve(String(fr.result||""));fr.onerror=()=>resolve("");fr.readAsDataURL(blob);});
+      }
+    }
+  }catch{}
+  let html="";
+  if(q?.passage) html+=`<div><strong>Passage</strong><div>${escHtml(q.passage).replace(/\n/g,"<br>")}</div></div><br>`;
+  if(imageData) html+=`<div><img src="${imageData}" alt="Diagram or image" style="max-width:100%;height:auto"></div><br>`;
+  html+=`<div><strong>${escHtml(q?.q||"")}</strong></div>`;
+  (q?.options||[]).slice(0,4).forEach((o,i)=>{html+=`<div>${"ABCD"[i]}. ${escHtml(o)}</div>`;});
+  if(review){
+    html+=`<br><div>Your Answer: <strong>${review.chosen===null||review.chosen===undefined?"Not answered":letter(review.chosen)}</strong></div>`;
+    html+=`<div>Correct Answer: <strong>${letter(review.answer)}</strong></div>`;
+    if(review.explanation) html+=`<br><div><strong>Explanation:</strong><br>${escHtml(review.explanation).replace(/\n/g,"<br>")}</div>`;
+  }
+  try{
+    if(navigator.clipboard?.write){
+      const item={"text/plain":new Blob([text],{type:"text/plain"}),"text/html":new Blob([html],{type:"text/html"})};
+      await navigator.clipboard.write([new ClipboardItem(item)]); return;
+    }
+  }catch{}
+  try{await navigator.clipboard.writeText(text);return}catch{}
+  const ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+}
+async function copyCurrentQuestion(){
+  const q=S?.questions?.[S.current]; if(!q)return;
+  try{await copyRichQuestion(q,null); const b=$("copyQuestionBtn"); if(b){const old=b.innerHTML;b.innerHTML="✓ Copied";setTimeout(()=>{if(b.isConnected)b.innerHTML=old},1200);} }
+  catch(e){alert("Unable to copy this question. Please try again.");}
+}
+
+async function reportCurrentQuestion(){
+  const q=S.questions[S.current]; if(!q?.id)return;
+  const modal=document.createElement("div"); modal.className="modal";
+  modal.innerHTML=`<div class="modal-box" role="dialog" aria-modal="true"><div class="section-head"><h2>Report Question</h2><button class="btn light" type="button" data-cancel>✕</button></div>
+    <label>Reason<select id="reportReason"><option>Incorrect answer</option><option>Incorrect question</option><option>Typographical/spelling error</option><option>Wrong or missing option</option><option>Incorrect explanation</option><option>Missing/incorrect image or diagram</option><option>Ambiguous/confusing question</option><option>Other</option></select></label>
+    <label>Additional details (optional)<textarea id="reportDetails" rows="4" maxlength="2000" placeholder="Tell the admin what needs attention…"></textarea></label>
+    <p class="error" id="reportErr"></p><div class="factions" style="justify-content:flex-end"><button class="btn light" type="button" data-cancel>Cancel</button><button class="btn primary" type="button" id="sendReport">Submit Report</button></div></div>`;
+  document.body.appendChild(modal);document.body.classList.add("noscroll");
+  const close=()=>{modal.remove();document.body.classList.remove("noscroll")};
+  modal.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=close);
+  modal.querySelector("#sendReport").onclick=async()=>{
+    try{
+      const r=await GB.api("/api/questions/"+encodeURIComponent(q.id)+"/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({reason:modal.querySelector("#reportReason").value,details:modal.querySelector("#reportDetails").value,sessionId:S.sessionId,cbtId:S.testId||""})});
+      close(); alert("Report submitted. Thank you.");
+    }catch(e){modal.querySelector("#reportErr").textContent=e.message}
+  };
+}
+function renderExam(){
+  shellEl.hidden=true; examEl.hidden=false; document.body.classList.add("exam-body");
+  examEl.innerHTML=`
+  <header class="exam-top">
+    ${examBrand()}
+    <div class="exam-heading"><b>${esc(S.title)}</b>${S.subtitle?`<small>${esc(S.subtitle)}</small>`:""}</div>
+    <span id="examTimer" class="exam-timer" ${S.timed?"":"hidden"}>🕐 <span id="examClock">00:00:00</span></span>
+    <button class="btn light" type="button" id="leaveCbtBtn">Leave CBT</button><button class="btn exam-submit" type="button" id="topSubmit">${S.mode==="study"?"Finish &amp; See Score":"Submit Test"}</button>
+  </header>
+  <div class="exam-main">
+    <section class="exam-card">
+      <div class="exam-qbar">
+        <span class="qnum" id="qNum"></span>
+        <span class="qtopic" id="qTopic"></span>
+        <div class="exam-qtools">
+          <button class="exam-tool" type="button" id="flagBtn">🚩 <span>Flag</span></button><button class="exam-tool" type="button" id="reportBtn">⚠ Report Question</button><button class="exam-tool" type="button" id="copyQuestionBtn">⧉ Copy Question</button>
+          <button class="exam-tool" type="button" id="calcBtn" aria-label="Open calculator">🧮 <span>Calculator</span></button>
+        </div>
+      </div>
+      <div class="exam-qbody" id="qBody"></div>
+      <div class="exam-options" id="qOptions"></div>
+      <div id="qFeedback"></div>
+      <div class="exam-foot">
+        <button class="btn light" type="button" id="prevBtn">← Previous</button>
+        <span class="spacer"></span>
+        <button class="btn light" type="button" id="clearBtn">Clear Answer</button>
+        <button class="btn exam-next" type="button" id="nextBtn">Next →</button>
+      </div>
+    </section>
+    <aside class="palette">
+      <h3>Question Palette</h3>
+      <div class="palette-grid" id="palette"></div>
+      <div class="palette-legend">
+        <div><i class="swatch cur"></i> Current Question</div>
+        <div><i class="swatch ans"></i> Answered</div>
+        <div><i class="swatch un"></i> Unanswered</div>
+        <div><span>🚩</span> Marked for Review</div>
+      </div>
+    </aside>
+  </div>
+  <div id="calcHost"></div>`;
+
+  $("topSubmit").onclick=()=>askSubmit();
+  $("leaveCbtBtn").onclick=async()=>{
+    const ok=await GBUI.confirmAction("Leave CBT?","Your current answers will not be submitted. You will return to the CBT Arena.","Yes, leave CBT");
+    if(!ok)return;
+    if(interval){clearInterval(interval);interval=null;}
+    const back=arenaLink();
+    S=null;
+    document.body.classList.remove("exam-body");
+    location.href=back;
+  };
+  $("copyQuestionBtn").onclick=copyCurrentQuestion;
+  $("prevBtn").onclick=()=>go(S.current-1);
+  $("nextBtn").onclick=()=>{if(S.current===S.questions.length-1)askSubmit();else go(S.current+1)};
+  $("clearBtn").onclick=()=>{S.answers[S.current]=null;paint()};
+  $("flagBtn").onclick=()=>{S.flags[S.current]=!S.flags[S.current];paint()};$("reportBtn").onclick=()=>reportCurrentQuestion();
+  $("calcBtn").onclick=()=>{S.calcOpen=!S.calcOpen;renderCalc()};
+  paint(); renderCalc(); tickPaint();
+}
+
+function go(i){if(i<0||i>=S.questions.length)return;S.current=i;paint();scrollTo({top:0,behavior:"smooth"})}
+
+let questionPaintToken=0;
+async function hydrateQuestionImage(q, token){
+  const host=$("qBody");
+  const img=host?.querySelector("img[data-question-image]");
+  if(!img || token!==questionPaintToken) return;
+  try{
+    if(q._imageBlobUrl){ img.src=q._imageBlobUrl; img.classList.remove("image-loading"); const st=host.querySelector(".question-image-status"); if(st)st.remove(); return; }
+    const url=q.image?.url||(q.image?.key?"/api/files/"+encodeURIComponent(q.image.key):"");
+    const blobUrl=await GB.fileBlobUrl(url,{contentType:q.image?.contentType||"image/*"});
+    q._imageBlobUrl=blobUrl;
+    if(token!==questionPaintToken) return;
+    img.src=blobUrl; img.classList.remove("image-loading"); const st=host.querySelector(".question-image-status"); if(st)st.remove();
+  }catch(e){
+    if(token!==questionPaintToken) return;
+    img.removeAttribute("src"); img.alt="Question image could not be loaded"; img.classList.remove("image-loading"); img.classList.add("image-failed");
+    const st=host.querySelector(".question-image-status"); if(st)st.textContent=e?.message||"Unable to load question image.";
+  }
+}
+
+function paint(){
+  const q=S.questions[S.current], sel=S.answers[S.current], last=S.current===S.questions.length-1;
+  const token=++questionPaintToken;
+  $("qNum").textContent=`Question ${S.current+1} of ${S.questions.length}`;
+  $("qTopic").textContent=`${q.subject||S.subject||"General"}${q.topic?` • ${q.topic}`:""} • ${Number(q.marks)||1} mark${Number(q.marks)===1?"":"s"}`;
+  // A question belonging to a dedicated section (Roman-numeral questions in
+  // particular) gets a clear banner naming that section, so it reads as its
+  // own distinct block rather than being mixed in indiscriminately with
+  // ordinary questions.
+  const qSection=q.sectionId?(S.sections||[]).find(sx=>sx.id===q.sectionId):null;
+  const sectionBanner=(q.roman||((qSection?.title||"").trim()&&qSection.title.trim().toLowerCase()!=="general"))?
+    `<div class="notice exam-section-banner${q.roman?" roman":""}"><b>${q.roman?"Roman Numeral Questions":esc(qSection?.title||"")}</b>${qSection?.instructions?`<div class="qrich" style="margin-top:6px">${GBUI.renderBody(qSection.instructions,"html")}</div>`:(q.roman?"<p style=\"margin:6px 0 0\">Each statement below is numbered with a Roman numeral (I, II, III…). Read every statement carefully before choosing an answer.</p>":"")}</div>`:"";
+  $("qBody").innerHTML=
+    sectionBanner+
+    (q.passage?`<div class="qpassage"><b>Passage</b><div class="qrich">${GBUI.renderBody(q.passage,"html")}</div></div>`:"")+
+    (q.image?`<div class="qrich question-image-wrap"><img data-question-image class="image-loading" alt="Loading question image…" loading="lazy"><small class="muted question-image-status">Loading question image…</small></div>`:"")+
+    `<div class="exam-qtext qrich">${GBUI.renderBody(q.q,"html")}</div>`;
+  if(q.image) void hydrateQuestionImage(q,token);
+  $("qOptions").innerHTML=q.options.map((o,k)=>
+    `<label class="exam-opt ${sel===k?"on":""}"><input type="radio" name="opt" value="${k}" ${sel===k?"checked":""}>
+      <span class="lt">${letter(k)}.</span><span class="ot qrich">${GBUI.renderBody(o,"html")}</span></label>`).join("");
+  $("qOptions").querySelectorAll("input").forEach(inp=>inp.onchange=()=>{S.answers[S.current]=Number(inp.value);paint()});
+
+  // Study mode shows the correction the moment an option is chosen.
+  const fb=$("qFeedback"); fb.innerHTML="";
+  if(S.mode==="study"&&sel!==null&&Number.isInteger(q.answer)){
+    const right=sel===q.answer;
+    fb.innerHTML=`<div class="notice" style="margin:0 18px 16px;${right?"background:#e7f6ee;color:#04502f":"background:#fdeceb;color:#8a1b13"}">
+      <b>${right?"Correct ✅":`Not quite ❌ — the correct answer is ${letter(q.answer)}.`}</b>
+      ${q.explanation?`<div class="qrich" style="margin-top:6px">${GBUI.renderBody(q.explanation,"html")}</div>`:""}</div>`;
+  }
+
+  $("prevBtn").disabled=S.current===0;
+  $("nextBtn").textContent=last?"Finish →":"Next →";
+  $("flagBtn").classList.toggle("on",S.flags[S.current]);
+  $("flagBtn").querySelector("span").textContent=S.flags[S.current]?"Flagged":"Flag";
+  $("palette").innerHTML=S.questions.map((_,i)=>
+    `<button type="button" class="pdot ${i===S.current?"on":""} ${S.answers[i]!==null?"answered":""} ${S.flags[i]?"flagged":""}" data-go="${i}">${i+1}</button>`).join("");
+  $("palette").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(Number(b.dataset.go)));
+  // The question body, options and any study-mode explanation can all
+  // contain LaTeX. Without this, MathJax never runs on exam content and
+  // raw TeX source (\frac{1}{2}, \sqrt{...}, etc.) is shown as-is.
+  GBUI.typesetMath?.();
+}
+
+/* ------------------------------ the timer ----------------------------- */
+function tickPaint(){
+  const t=$("examTimer"); if(!t)return;
+  if(!S.timed){t.hidden=true;return}
+  t.hidden=false; $("examClock").textContent=clock(Math.max(0,S.seconds));
+  t.classList.toggle("low",S.seconds<=60);
+}
+function startClock(){
+  clearInterval(interval);
+  interval=setInterval(()=>{
+    if(!S||S.submitted)return;
+    S.elapsed++;
+    if(S.timed){S.seconds--; if(S.seconds<=0){S.seconds=0;tickPaint();clearInterval(interval);doSubmit(true);return}}
+    tickPaint();
+  },1000);
+}
+
+/* --------------------------- the calculator ---------------------------
+   An expression calculator, so the bracket and percent keys shown in the
+   design actually do something. The expression is parsed by hand (no eval)
+   with normal operator precedence. */
+const C={expr:"",display:"0"};
+const CALC_KEYS=[
+  ["AC","fn"],["(","fn"],[")","fn"],["%","fn"],
+  ["7",""],["8",""],["9",""],["\u00f7","op"],
+  ["4",""],["5",""],["6",""],["\u00d7","op"],
+  ["1",""],["2",""],["3",""],["\u2212","op"],
+  ["0",""],[".",""],["\u232b",""],["+","op"],
+  ["=","eq"]
+];
+function renderCalc(){
+  const host=$("calcHost"); if(!host)return;
+  if(!S.calcOpen){host.innerHTML="";return}
+  host.innerHTML=`<div class="calc-float" role="dialog" aria-label="Calculator">
+    <div class="calc-head"><span>Calculator</span><button type="button" id="calcClose" aria-label="Close calculator">\u2715</button></div>
+    <div class="calc-screen" id="calcScreen"><small id="calcExpr"></small><span id="calcValue">${esc(C.display)}</span></div>
+    <div class="calc-pad">${CALC_KEYS.map(([k,c])=>`<button type="button" class="ckey ${c}" data-k="${esc(k)}">${esc(k)}</button>`).join("")}</div>
+    <div class="calc-note">Note: Calculator will not be available after submission.</div>
+  </div>`;
+  host.querySelector("#calcClose").onclick=()=>{S.calcOpen=false;renderCalc()};
+  host.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{key(b.dataset.k);paintCalc()});
+  paintCalc();
+}
+function paintCalc(){
+  const e=$("calcExpr"), v=$("calcValue");
+  // Only the tail of a long expression fits, so show that.
+  if(e)e.textContent=C.expr.length>24?"\u2026"+C.expr.slice(-24):C.expr;
+  if(v)v.textContent=C.display;
+}
+function key(v){
+  if(v==="AC"){C.expr="";C.display="0";return}
+  if(v==="\u232b"){C.expr=C.expr.slice(0,-1);C.display=preview();return}
+  if(v==="="){const r=evalExpr(C.expr);C.display=r;C.expr=(r==="Error"?"":r);return}
+  // A fresh digit after a finished sum starts a new calculation.
+  if(!C.expr && /[0-9.]/.test(v) && C.display!=="0" && C.display!=="Error"){C.expr=""}
+  C.expr+=v;
+  C.display=preview();
+}
+function preview(){ const r=evalExpr(C.expr); return r==="Error"?(C.expr?C.display:"0"):r }
+function evalExpr(src){
+  const t=String(src||"").replace(/\u00f7/g,"/").replace(/\u00d7/g,"*").replace(/\u2212/g,"-");
+  if(!t.trim())return "0";
+  let i=0;
+  const ws=()=>{while(t[i]===" ")i++};
+  function number(){
+    ws();
+    if(t[i]==="("){i++;const v=expr();ws();if(t[i]!==")")throw 0;i++;return post(v)}
+    if(t[i]==="-"){i++;return -number()}
+    if(t[i]==="+"){i++;return number()}
+    const m=/^\d*\.?\d+/.exec(t.slice(i));
+    if(!m)throw 0;
+    i+=m[0].length;
+    return post(Number(m[0]));
+  }
+  function post(v){ ws(); while(t[i]==="%"){i++;v=v/100;ws()} return v }
+  function term(){
+    let v=number();
+    for(;;){ ws();
+      if(t[i]==="*"){i++;v*=number()}
+      else if(t[i]==="/"){i++;const d=number();if(d===0)throw 0;v/=d}
+      else return v;
+    }
+  }
+  function expr(){
+    let v=term();
+    for(;;){ ws();
+      if(t[i]==="+"){i++;v+=term()}
+      else if(t[i]==="-"){i++;v-=term()}
+      else return v;
+    }
+  }
+  try{
+    const v=expr(); ws();
+    if(i!==t.length||!Number.isFinite(v))return "Error";
+    return String(Math.round(v*1e10)/1e10);
+  }catch{ return "Error" }
+}
+
+/* ---------------------- submit confirmation modal --------------------- */
+function askSubmit(){
+  const total=S.questions.length, done=answeredCount(), left=total-done;
+  const host=$("modalHost");
+  host.innerHTML=`<div class="modal" id="confirmModal"><div class="confirm-box" role="dialog" aria-modal="true" aria-labelledby="cfTitle">
+    <div class="confirm-mark">!</div>
+    <h2 id="cfTitle">${S.mode==="study"?"Finish this session?":"Submit Test?"}</h2>
+    <p>You have answered <b>${done}</b> out of <b>${total}</b> questions.</p>
+    <p>${left?`There ${left===1?"is":"are"} <b>${left}</b> unanswered question${left===1?"":"s"}.`:"Every question has been answered."}</p>
+    <p>Are you sure you want to submit the test?</p>
+    <div class="confirm-actions"><button class="btn light" type="button" id="cfCancel">Cancel</button><button class="btn exam-submit" type="button" id="cfGo">✓ ${S.mode==="study"?"Yes, Show My Score":"Yes, Submit Test"}</button></div>
+    <div class="confirm-note">🛡 ${S.mode==="study"?"Your score and full corrections will be shown next.":"Once submitted, you cannot change your answers."}</div>
+  </div></div>`;
+  document.body.classList.add("noscroll");
+  const close=()=>{host.innerHTML="";document.body.classList.remove("noscroll")};
+  $("cfCancel").onclick=close;
+  $("confirmModal").addEventListener("click",e=>{if(e.target.id==="confirmModal")close()});
+  $("cfGo").onclick=()=>{close();doSubmit(false)};
+  setTimeout(()=>$("cfGo").focus(),0);
+}
+
+async function doSubmit(auto){
+  if(!S||S.submitted)return;
+  S.submitted=true; clearInterval(interval);
+  const timeTaken=S.timed?clock(Math.max(0,S.duration*60-S.seconds)):clock(S.elapsed);
+
+  // Study Mode is marked in the browser: the correct answers are already
+  // on the page, so there is nothing to send to the server.
+  if(S.mode==="study"){
+    let correct=0,unanswered=0;
+    const review=S.questions.map((q,i)=>{
+      const c=S.answers[i];
+      if(c===null)unanswered++; else if(c===q.answer)correct++;
+      return {number:i+1,q:q.q,passage:q.passage,image:q.image,options:q.options,answer:q.answer,chosen:c,correct:c===q.answer,explanation:q.explanation};
+    });
+    const total=S.questions.length;
+    renderResults({score:total?Math.round(correct/total*100):0,correct,wrong:total-correct-unanswered,unanswered,testTitle:S.title,subject:S.subject,date:new Date().toISOString()},review,{timeTaken,auto});
+    return;
+  }
+
+  try{
+    const x=S.kind==="test"
+      ? await GB.api("/api/tests/"+encodeURIComponent(testId)+"/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({answers:S.answers,sessionId:S.sessionId,studentForm:S.studentForm||{}})})
+      : await GB.api(S.submitUrl||("/api/question-bank/session/"+encodeURIComponent(S.sessionId)+"/submit"),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({answers:S.answers})});
+    {
+      const rr=x.result||{};
+      if(x.held || (rr.resultVisibility==="held" && rr.resultReleased===false)){ renderHeldResult(rr,{timeTaken,auto}); return; }
+      renderResults({...rr,score:Math.round(Number(rr.score)||0),earnedMarks:rr.earnedMarks,totalMarks:rr.totalMarks},x.review,{timeTaken,auto});
+    }
+  }catch(e){
+    S.submitted=false; if(S.timed)startClock();
+    alert(e.message||"We could not submit your test. Please check your connection and try again.");
+  }
+}
+
+/* --------------------------- results summary --------------------------
+   One summary block, laid out like the design: donut + score, the test
+   details and tally, and the remark card. Used both straight after a
+   submission and when the student re-opens a past result. */
+function resultSummaryHtml(result,opts){
+  const o=opts||{};
+  const g=GBUI.GRADE(result.score);
+  const total=(result.correct||0)+(result.wrong||0)+(result.unanswered||0);
+  const date=new Date(result.date||result.submittedAt||Date.now()).toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  const who=esc(result.studentName||me.name||me.username||result.studentForm?.full_name||result.studentForm?.fullname||"Student");
+  return `
+    <div class="res-top"><span class="tick">\u2705</span><span><b>${o.heading||"Test Completed!"}</b><small>${o.sub||("Great effort, "+who+"!")}</small></span></div>
+    <div class="res-grid">
+      <div class="res-card">
+        ${GBUI.scoreDonut(result.score)}
+        <div class="res-score-label">Aggregate Score</div>
+        <div class="res-score">${Number.isFinite(Number(result.earnedMarks))?Math.round(Number(result.earnedMarks)):result.correct} / ${Number.isFinite(Number(result.totalMarks))?Math.round(Number(result.totalMarks)):total}</div>
+        <div class="res-band bg-${g.band}">${g.emoji} ${esc(g.word)}! • ${Math.round(Number(result.score)||0)}%</div>
+      </div>
+      <div class="res-card" style="text-align:left">
+        <div class="res-rows">
+          <div class="res-kv"><span>Name</span><b>${who}</b></div>
+          <div class="res-kv"><span>Test</span><b>${esc(result.testTitle||S.title||"")}</b></div>
+          <div class="res-kv"><span>Date</span><b>${esc(date)}</b></div>
+          ${o.timeTaken?`<div class="res-kv"><span>Time Taken</span><b>${esc(o.timeTaken)}</b></div>`:`<div class="res-kv"><span>Subject</span><b>${esc(result.subject||"")}</b></div>`}
+        </div>
+        <div class="res-sep"></div>
+        <div class="res-tally">
+          <div class="n-correct">\u2705 Correct Answers <b>${result.correct}</b></div>
+          <div class="n-wrong">\u274c Wrong Answers <b>${result.wrong}</b></div>
+          <div class="n-unans">\u2796 Unanswered <b>${result.unanswered}</b></div>
+          <div class="n-total">\ud83d\udccb Total Questions <b>${total}</b></div>
+        </div>
+      </div>
+      ${Array.isArray(result.subjectScores)&&result.subjectScores.length?`<div class="res-card" style="text-align:left"><h4>Subject Scores</h4>${result.subjectScores.map(x=>`<div class="res-kv"><span>${esc(x.subject)}</span><b>${Number.isFinite(Number(x.earnedMarks))?Math.round(Number(x.earnedMarks)):x.correct} / ${Number.isFinite(Number(x.totalMarks))?Math.round(Number(x.totalMarks)):(Number(x.correct||0)+Number(x.wrong||0)+Number(x.unanswered||0))} • ${Math.round(Number(x.score)||0)}%</b></div>`).join("")}</div>`:""}
+      <div class="res-card">
+        <h4>Your Remark</h4>
+        <div class="remark-badge bg-${g.band}">${g.emoji}</div>
+        <div class="remark-word g-${g.band}">${esc(g.word)}</div>
+        <div class="res-remark-text">${esc(g.remark)} ${g.emoji}</div>
+      </div>
+    </div>`;
+}
+
+async function improvementFeedbackHtml(result){
+  try{
+    const d=await GB.api("/api/dashboard");
+    const prior=(d.results||[]).filter(r=>r.id!==result.id && r.subject===result.subject).sort((a,b)=>new Date(b.submittedAt||b.date||0)-new Date(a.submittedAt||a.date||0))[0];
+    if(!prior) return `<div class="progress-feedback improved"><div class="pf-main"><span class="pf-icon">🚀</span><div><b>Great start!</b><small>This is your first recorded ${esc(result.subject||"subject")} attempt. Review the corrections and use them to prepare for your next practice session.</small></div></div></div>`;
+    const delta=Number(result.score)-Number(prior.score);
+    if(delta>0) return `<div class="progress-feedback improved"><div class="pf-main"><span class="pf-icon">📈</span><div><b>You improved by ${delta} percentage point${delta===1?"":"s"}!</b><small>Your ${esc(result.subject||"subject")} score moved from ${prior.score}% to ${result.score}%. Keep reviewing the questions you missed.</small></div></div></div>`;
+    if(delta===0) return `<div class="progress-feedback same"><div class="pf-main"><span class="pf-icon">🎯</span><div><b>You matched your previous score.</b><small>You stayed at ${result.score}% in ${esc(result.subject||"this subject")}. Review your corrections and target one or two weak areas next.</small></div></div></div>`;
+    return `<div class="progress-feedback down"><div class="pf-main"><span class="pf-icon">💡</span><div><b>Use this result to improve.</b><small>Your ${esc(result.subject||"subject")} score moved from ${prior.score}% to ${result.score}%. That is useful feedback—review the missed answers before your next attempt.</small></div></div></div>`;
+  }catch{ return ""; }
+}
+
+function renderHeldResult(result,meta){const back=arenaLink();examEl.innerHTML=`<header class="exam-top">${examBrand()}<div class="exam-heading"><b>Submission Received</b><small>${esc(result.testTitle||S.title)}</small></div><a class="btn light" href="${esc(back)}">Back to CBT Arena</a></header><div class="exam-main" style="grid-template-columns:minmax(0,1fr)"><div class="card result-held"><div class="held-icon">✓</div><h2>Your assessment has been submitted.</h2><p>Your result is currently being held by the administrator. You will receive a Gifted Brainz EduSpace notification when the result is released.</p><div class="notice">There is no result link. Check your <b>Notifications</b> and <b>My Performance</b> inside EduSpace after release.</div><div class="res-actions"><a class="btn primary" href="/notifications.html">View Notifications</a><a class="btn light" href="${esc(back)}">Back to CBT Arena</a></div></div></div>`;document.body.classList.remove("exam-body");scrollTo({top:0,behavior:"smooth"})}
+function renderResults(result,review,meta){
+  examEl.innerHTML=`
+  <header class="exam-top">${examBrand()}
+    <div class="exam-heading"><b>Results Summary</b><small>${esc(result.testTitle||S.title)}</small></div>
+    <a class="btn light" href="${esc(arenaLink())}">Back to CBT Arena</a>
+  </header>
+  <div class="exam-main" style="grid-template-columns:minmax(0,1fr)">
+    <div>
+      ${resultSummaryHtml(result,{timeTaken:meta.timeTaken})}
+      <div id="improvementFeedback"><p class="muted">Checking your progress…</p></div>
+      ${meta.auto?`<div class="notice" style="margin-top:14px">\u23f0 Time was up, so your test was submitted automatically.</div>`:""}
+      <div class="res-actions">
+        <button class="btn primary" type="button" id="reviewBtn">\ud83d\udcd6 Review Missed Answers</button>
+        <a class="btn exam-submit" href="/leaderboards.html">\ud83c\udfc6 View Leaderboard</a>
+        <a class="btn light" href="${esc(arenaLink())}">\u21bb Retake Test</a>
+      </div>
+      <div id="reviewHost" style="margin-top:16px"></div>
+    </div>
+  </div>`;
+  document.body.classList.remove("exam-body");
+  improvementFeedbackHtml(result).then(html=>{const el=examEl.querySelector("#improvementFeedback");if(el&&html)el.innerHTML=html;});
+  const host=$("reviewHost");
+  host.onclick=async e=>{
+    const btn=e.target.closest("[data-copy-review]"); if(!btn)return;
+    const idx=Number(btn.dataset.copyReview), r=Array.isArray(review)?review[idx]:null; if(!r)return;
+    try{
+      const q={q:r.q,passage:r.passage,image:r.image,options:r.options};
+      await copyRichQuestion(q,r);
+      const old=btn.innerHTML;btn.innerHTML="✓ Copied";setTimeout(()=>{if(btn.isConnected)btn.innerHTML=old},1200);
+    }catch{alert("Unable to copy this question. Please try again.")}
+  };
+  $("reviewBtn").onclick=()=>{
+    if(host.innerHTML){host.innerHTML="";return}
+    host.innerHTML=reviewHtml(review,"Corrections \u2014 every question, your answer and the reason");
+    GBUI.typesetMath?.();
+    host.scrollIntoView({behavior:"smooth",block:"start"});
+  };
+  scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ------------------------------- review ------------------------------- */
+// Item 8: the correct option always carries a green tick. When the student
+// picked a wrong option, that option is ticked red and the right one green.
+function reviewHtml(review,heading){
+  if(!Array.isArray(review)||!review.length) return '<div class="card"><p class="muted">No review is available for this test.</p></div>';
+  return `<div class="card"><h2>${esc(heading||"Review your answers")}</h2>
+    <p class="muted">Green ✅ is the correct option. Red ❌ shows where your answer went wrong.</p>
+    <div class="list" style="margin-top:14px">`+review.map((r,idx)=>{
+      const chosen=(r.chosen===null||r.chosen===undefined)?null:r.chosen;
+      return `<div class="review-item ${r.correct?"correct":"wrong"}">
+        <div class="section-head"><b>Question ${r.number}</b><button class="btn light" type="button" data-copy-review="${idx}">⧉ Copy Question</button></div>
+        ${r.passage?`<div class="qpassage">${GBUI.renderBody(r.passage,"html")}</div>`:""}
+        ${r.image?`<img style="max-width:100%;border-radius:10px;margin:8px 0" src="${esc(GB.fileUrl(r.image.url||("/api/files/"+encodeURIComponent(r.image.key)),{inline:true}))}" alt="Question image">`:""}
+        <div class="qrich" style="margin:6px 0 10px">${GBUI.renderBody(r.q,"html")}</div>
+        ${r.options.map((o,k)=>{
+          const isAns=k===r.answer, isPick=k===chosen;
+          const tick=isAns?'<span class="rtick" style="color:#067647">✅</span>':(isPick?'<span class="rtick" style="color:#b3261e">❌</span>':'<span class="rtick" style="opacity:.25">•</span>');
+          const tag=isAns?'<span class="review-tag" style="color:#067647">Correct answer</span>':(isPick?'<span class="review-tag" style="color:#b3261e">Your answer</span>':"");
+          return `<div class="review-opt${isAns?" is-answer":""}${isPick?" is-chosen":""}">${tick}<span>${letter(k)}. ${GBUI.renderBody(o,"html")}</span>${tag}</div>`;
+        }).join("")}
+        <div class="muted" style="margin-top:8px">Your answer: ${chosen===null?"Not answered":letter(chosen)} • Correct answer: ${letter(r.answer)}</div>
+        ${r.explanation?`<div class="review-reason"><b>Reason:</b> ${GBUI.renderBody(r.explanation,"html")}</div>`:""}
+      </div>`}).join("")+`</div></div>`;
+}
+
+
+document.addEventListener("click",e=>{const b=e.target.closest("[data-activation-resource]");if(b){showActivationNotice(b.dataset.activationResource,Number(b.dataset.activationPrice)||3000);}});
+
+/* ------------------------- CBT centre (listing) ----------------------- */
+async function loadTests(){
+  try{
+    window.availableTests=await GB.api("/api/tests");
+    const requested=new URLSearchParams(location.search).get("subject")||"All";
+    const valid=["All",...GBUI.mySubjects()];
+    showTestCentre(valid.includes(requested)?requested:"All");
+  }catch(e){ $("app").innerHTML=`<div class="card"><p class="error">${esc(e.message)}</p><button class="btn light" type="button" onclick="location.reload()">Retry</button></div>` }
+}
+function renderTestCards(subject){
+  const term=(window.cbtSearchTerm!==undefined?window.cbtSearchTerm:"").trim().toLowerCase();
+  const a=window.availableTests||[];
+  const scoped=subject==="All"?a:a.filter(x=>x.subject===subject);
+  const b=term?scoped.filter(x=>[x.title,x.subject,x.description].some(v=>String(v||"").toLowerCase().includes(term))):scoped;
+  const host=$("testCards");
+  if(!host)return;
+  host.innerHTML=b.length?b.map(x=>`<div class="item"><h3>${esc(x.title)}</h3>
+    <div class="muted">${esc(x.subject)} • ${x.count} questions • ${x.duration} minutes</div>
+    ${x.locked?`<button class="btn light" style="margin-top:10px" type="button" data-activation-resource="${esc(x.title)}" data-activation-price="${Number(x.activationPrice)||3000}">🔒 Activate to access</button>`:`<a class="btn primary" style="margin-top:10px" href="/cbt.html?id=${encodeURIComponent(x.id)}&return=${encodeURIComponent(currentArenaUrl())}">Start This Mock Test →</a>`}</div>`).join(""):"<p class='muted'>No CBTs are currently available for this search.</p>";
+}
+function showTestCentre(subject){
+  const params=new URLSearchParams(location.search);
+  const term=(window.cbtSearchTerm!==undefined?window.cbtSearchTerm:(params.get("search")||"")).trim().toLowerCase();
+  window.cbtSearchTerm=term;
+  $("app").innerHTML=`<div class="card"><h1>CBT Arena</h1>
+    <p class="muted">Take a published mock test or use the Question Bank for self-study and timed practice.</p>
+    <div class="tabs"><button class="tab on" type="button">🎯 Mock Tests</button><button class="tab" type="button" onclick="showQuestionBank()">🧠 Question Bank</button></div>
+    <div class="filters" style="margin-top:14px">${["All",...GBUI.mySubjects()].map(s=>`<button class="btn ${s===subject?"primary":"light"}" type="button" data-cbt-subject="${GBUI.esc(s)}">${GBUI.esc(s)}</button>`).join("")}</div>
+    <div class="field full" style="margin-top:14px"><label for="cbtSearch">Search CBTs</label><input id="cbtSearch" type="search" maxlength="120" placeholder="Search by CBT title or subject…" autocomplete="off" value="${esc(term)}"></div>
+    <div id="testCards" class="list" style="margin-top:16px"></div></div>`;
+  $("app").querySelectorAll("[data-cbt-subject]").forEach(btn=>btn.addEventListener("click",()=>{
+    const next=btn.dataset.cbtSubject||"All";
+    const nextUrl=new URL(location.href);
+    nextUrl.searchParams.delete("id");
+    nextUrl.searchParams.delete("return");
+    nextUrl.searchParams.delete("review");
+    if(next==="All") nextUrl.searchParams.delete("subject"); else nextUrl.searchParams.set("subject",next);
+    history.replaceState(null,"",nextUrl.pathname+nextUrl.search);
+    showTestCentre(next);
+  }));
+  // Only the results list re-renders on each keystroke; the input itself,
+  // the tabs and the subject filters are left untouched so focus and cursor
+  // position are preserved while typing.
+  $("cbtSearch")?.addEventListener("input",e=>{
+    window.cbtSearchTerm=e.target.value;
+    history.replaceState(null,"",`?${subject!=="All"?"subject="+encodeURIComponent(subject)+"&":""}${window.cbtSearchTerm?"search="+encodeURIComponent(window.cbtSearchTerm):""}`);
+    renderTestCards(subject);
+  });
+  renderTestCards(subject);
+}
+
+function showQuestionBank(view="all"){
+  const mine=GBUI.mySubjects();
+  $("app").innerHTML=`<div class="card">
+    <h1>🧠 Question Bank</h1>
+    <p class="muted">Study from the reusable question bank or practise from selected topics.</p>
+    <div class="tabs" style="margin-top:14px">
+      <button class="tab ${view==="all"?"on":""}" type="button" id="qbAllTab">📚 All Questions</button>
+      <button class="tab ${view==="topic"?"on":""}" type="button" id="qbTopicTab">🧩 Topic-Based Practice</button>
+    </div>
+    <div id="qbContent"></div>
+  </div>`;
+  $("qbAllTab").onclick=()=>showQuestionBank("all");
+  $("qbTopicTab").onclick=()=>showQuestionBank("topic");
+  if(view==="topic") renderTopicPracticePanel();
+  else renderAllQuestionBankPanel();
+}
+
+function renderAllQuestionBankPanel(){
+  $("qbContent").innerHTML=`<div class="qb-controls" style="margin-top:16px">
+    <div class="field"><label for="qbSubject">Subject</label><select id="qbSubject">${GBUI.mySubjects().map(s=>`<option>${GBUI.esc(s)}</option>`).join("")}</select></div>
+    <div class="field"><label for="qbCount">Number of questions</label><input id="qbCount" type="number" min="1" max="100" value="20"></div>
+    <div class="field"><label for="qbMode">Mode</label><select id="qbMode"><option value="study">Study Mode — untimed</option><option value="practice">Practice Mode — timed</option></select></div>
+    <div class="field" id="qbDurationWrap" hidden><label for="qbDuration">Time limit (minutes)</label><input id="qbDuration" type="number" min="1" max="120" value="20"></div>
+  </div>
+  <div class="filters" style="margin-top:12px"><button class="btn gold" type="button" id="qbStartAll">Start Question Bank →</button></div>
+  <p id="qbMsg" class="muted"></p>`;
+  $("qbMode").onchange=()=>{$("qbDurationWrap").hidden=$("qbMode").value!=="practice"};
+  $("qbStartAll").onclick=()=>startBank();
+}
+
+async function renderTopicPracticePanel(){
+  $("qbContent").innerHTML=`<div class="qb-controls" style="margin-top:16px">
+    <div class="field"><label for="qbTopicSubject">Subject</label><select id="qbTopicSubject">${GBUI.mySubjects().map(s=>`<option>${GBUI.esc(s)}</option>`).join("")}</select></div>
+    <div class="field"><label for="qbTopicCount">Number of questions</label><input id="qbTopicCount" type="number" min="1" max="100" value="20"></div>
+    <div class="field"><label for="qbTopicMode">Mode</label><select id="qbTopicMode"><option value="study">Study Mode — untimed</option><option value="practice">Practice Mode — timed</option></select></div>
+    <div class="field" id="qbTopicDurationWrap" hidden><label for="qbTopicDuration">Time limit (minutes)</label><input id="qbTopicDuration" type="number" min="1" max="120" value="20"></div>
+  </div>
+  <div class="section-head"><div><h3>Choose topics</h3><small class="muted">Select one, several, or all. Questions are drawn randomly from the combined pool.</small></div><button class="btn light" type="button" id="qbSelectAll">Select All</button></div>
+  <div id="qbTopics" class="panelgrid"><p class="muted">Loading topics…</p></div>
+  <p class="muted" id="qbPoolInfo"></p>
+  <div class="filters"><button class="btn gold" type="button" id="qbStart">Start Topic-Based Practice →</button></div>
+  <p id="qbTopicMsg"></p>`;
+  async function refreshTopics(){
+    try{
+      const rows=await GB.api("/api/question-bank/topics?subject="+encodeURIComponent($("qbTopicSubject").value));
+      $("qbTopics").innerHTML=rows.length?rows.map(t=>`<label class="card" style="display:block;cursor:pointer"><input class="qb-topic" type="checkbox" value="${GBUI.esc(t.id)}"> <b>${GBUI.esc(t.name)}</b><small class="muted"> — ${t.count} question${t.count===1?"":"s"}</small></label>`).join(""):"<p class='muted'>No topics are available for this subject yet.</p>";
+      $("qbTopics").querySelectorAll(".qb-topic").forEach(x=>x.addEventListener("change",updatePoolInfo));
+      updatePoolInfo();
+    }catch(e){$("qbTopics").innerHTML=`<p class="error">${GBUI.esc(e.message)}</p>`}
+  }
+  function updatePoolInfo(){
+    const selected=[...document.querySelectorAll(".qb-topic:checked")];
+    const total=selected.reduce((sum,x)=>sum+Number((x.closest("label")?.querySelector("small")?.textContent||"").match(/\d+/)?.[0]||0),0);
+    const max=selected.length===1?Math.min(40,total):Math.min(100,total);
+    $("qbTopicCount").max=Math.max(1,max);
+    if(Number($("qbTopicCount").value)>max)$("qbTopicCount").value=Math.max(1,max);
+    $("qbPoolInfo").textContent=selected.length?`${selected.length} topic${selected.length===1?"":"s"} selected • ${total} questions in the combined pool • maximum ${max}.`:"Select at least one topic.";
+  }
+  $("qbTopicSubject").onchange=refreshTopics;
+  $("qbSelectAll").onclick=()=>{const boxes=[...document.querySelectorAll(".qb-topic")];const all=boxes.length&&boxes.every(x=>x.checked);boxes.forEach(x=>x.checked=!all);updatePoolInfo()};
+  $("qbTopicMode").onchange=()=>{$("qbTopicDurationWrap").hidden=$("qbTopicMode").value!=="practice"};
+  $("qbStart").onclick=()=>startTopicPractice();
+  refreshTopics();
+}
+
+async function startTopicPractice(){
+  const msg=$("qbTopicMsg"); msg.className=""; msg.textContent="Preparing your topic practice…";
+  try{
+    const topicIds=[...document.querySelectorAll(".qb-topic:checked")].map(x=>x.value);
+    if(!topicIds.length)throw Error("Select at least one topic.");
+    const mode=$("qbTopicMode").value, count=Number($("qbTopicCount").value)||1, duration=Number($("qbTopicDuration").value)||20;
+    await GB.ensureFileTicket().catch(()=>{});
+    const x=await GB.api("/api/question-bank/topic-session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:$("qbTopicSubject").value,topicIds,count,mode,duration})});
+    S=newState({kind:"topic",title:`Topic Practice — ${x.subject}`,subject:x.subject,subtitle:mode==="study"?"Study Mode • untimed":"Practice Mode • timed",questions:x.questions,sessionId:x.sessionId,mode,duration:x.duration||duration,timed:mode==="practice",returnUrl:currentArenaUrl(),submitUrl:"/api/question-bank/topic-session/"+encodeURIComponent(x.sessionId)+"/submit"});
+    renderExam(); startClock();
+  }catch(e){msg.className="error";msg.textContent=e.message}
+}
+
+async function startBank(){
+  const msg=$("qbMsg"); msg.className=""; msg.textContent="Preparing your questions…";
+  try{ await GB.ensureFileTicket().catch(()=>{});
+    const mode=$("qbMode").value,
+      count=Math.min(100,Math.max(1,Number($("qbCount").value)||1)),
+      duration=Math.min(120,Math.max(1,Number($("qbDuration").value)||20));
+    const x=await GB.api("/api/question-bank/session",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({subject:$("qbSubject").value,mode,count,duration})});
+    S=newState({kind:"bank",title:`Question Bank — ${x.subject}`,subject:x.subject,
+      subtitle:mode==="study"?"Study Mode • untimed • correction shown as you answer":"Practice Mode • timed • correction after submission",
+      questions:x.questions,sessionId:x.sessionId,mode,duration:x.duration||duration,timed:mode==="practice",returnUrl:currentArenaUrl()});
+    renderExam(); startClock();
+  }catch(e){ msg.className="error"; msg.textContent=e.message }
+}
+
+async function startTest(){
+  try{
+    await GB.ensureFileTicket().catch(()=>{});
+    const t=await GB.api("/api/tests/"+encodeURIComponent(testId));
+    // Every mock test must pass through the branded assessment-launch screen,
+    // even when the assessment has no custom student fields.
+    showStudentForm(t);
+  }catch(e){ $("app").innerHTML=`<div class="card"><p class="error">${esc(e.message)}</p><a class="btn light" href="/cbt.html">← Back to CBT Arena</a></div>` }
+}
+function launchTest(t,studentForm){
+  S=newState({kind:"test",title:t.title,subject:t.subject,subtitle:`${t.subject} • ${t.questions.length} questions • ${t.duration} minutes`,questions:t.questions,sections:t.sections,sessionId:t.sessionId,mode:"practice",duration:t.duration,timed:true,studentForm,returnUrl:arenaReturnUrl});
+  S.testId=t.id;S.passMark=Number(t.passMark)||50;S.resultVisibility=t.resultVisibility||"immediate";S.oneAttempt=t.oneAttempt!==false;renderExam();startClock();
+}
+function studentFieldDefault(key){
+  const k=String(key||"").toLowerCase();
+  if(["full_name","fullname","name","student_name"].includes(k)) return me.name||"";
+  if(["username","student_username"].includes(k)) return me.username||"";
+  if(["email","student_email"].includes(k)) return me.email||"";
+  return "";
+}
+function showStudentForm(t){
+  const fields=t.studentFields||[];
+  const controls=fields.map(f=>{
+    const rawKey=String(f.key||"field"); const name=esc(rawKey); const label=esc(f.label||rawKey); const def=esc(studentFieldDefault(rawKey));
+    if(f.type==="textarea") return `<div class="field full"><label>${label}${f.required?" *":""}</label><textarea data-student-field="${name}" rows="4" ${f.required?"required":""}>${def}</textarea></div>`;
+    if(f.type==="select") return `<div class="field"><label>${label}${f.required?" *":""}</label><select data-student-field="${name}" ${f.required?"required":""}><option value="">Select…</option>${(f.options||[]).map(o=>`<option>${esc(o)}</option>`).join("")}</select></div>`;
+    return `<div class="field"><label>${label}${f.required?" *":""}</label><input data-student-field="${name}" value="${def}" type="${["email","tel","number"].includes(f.type)?f.type:"text"}" ${f.required?"required":""}></div>`;
+  }).join("");
+  const instruction=String(t.instructions||"Complete the required information before starting this assessment."); const instructionHtml=GBUI.renderBody?GBUI.renderBody(instruction,"html"):esc(instruction); const back=arenaLink();
+  $("app").innerHTML=`<div class="card student-form-card assessment-launch-card"><div class="assessment-launch-topbar"><a class="btn light" href="${esc(back)}">← Back</a></div><div class="assessment-brand"><img src="/assets/icon.png" alt="Gifted Brainz" class="assessment-brand-icon"><span class="assessment-brand-name"><b>GIFTED</b> BRAINZ<small>EDUSPACE • ASSESSMENT HUB</small></span></div><div class="assessment-launch-heading"><span class="eyebrow">BEFORE YOU START</span><h2>${esc(t.title)}</h2><div class="assessment-instructions">${instructionHtml}</div></div><div class="assessment-detail-grid"><span><b>${t.questions.length}</b><small>Questions</small></span><span><b>${t.duration}</b><small>Minutes</small></span><span><b>${t.oneAttempt===false?"Multiple":"One"}</b><small>Attempts</small></span></div><form id="studentAssessmentForm" class="formgrid">${controls}<div class="field full"><div class="notice"><b>Ready to begin?</b> Your saved name, username and email are filled in automatically when the assessment requests them. Check the details, then start.</div></div><div class="field full assessment-start-wrap"><button class="btn primary assessment-start-btn" type="submit"><span class="assessment-play" aria-hidden="true"></span>Start Assessment</button></div></form></div>`;
+  GBUI.typesetMath?.();
+  const form=$("studentAssessmentForm");
+  form.onsubmit=e=>{
+    e.preventDefault();
+    if(!form.reportValidity())return;
+    const data={};for(const el of form.querySelectorAll('[data-student-field]'))data[el.dataset.studentField]=el.value.trim();
+    const button=form.querySelector('button[type="submit"]');
+    if(button){button.disabled=true;button.innerHTML='<span class="assessment-play" aria-hidden="true"></span>Starting…';}
+    try{launchTest(t,data)}catch(err){
+      if(button){button.disabled=false;button.innerHTML='<span class="assessment-play" aria-hidden="true"></span>Start Assessment';}
+      alert(err?.message||"We could not start this assessment. Please try again.");
+    }
+  };
+}
+
+async function loadReview(){
+  try{
+    const x=await GB.api("/api/results/"+encodeURIComponent(reviewId)+"/review");
+    $("app").innerHTML=`<div class="card">
+      <a class="btn light" href="/performance.html">\u2190 Back to My Performance</a>
+      ${resultSummaryHtml(x.result,{heading:"Result Summary",sub:"Here is how this test went."})}
+      <div class="res-actions">
+        <a class="btn exam-submit" href="/leaderboards.html">\ud83c\udfc6 View Leaderboard</a>
+        <a class="btn light" href="${esc(arenaLink())}">\u21bb Take Another Test</a>
+      </div>
+    </div>`+reviewHtml(x.review);
+    GBUI.typesetMath?.();
+  }catch(e){ $("app").innerHTML=`<div class="card"><p class="error">${esc(e.message)}</p><a class="btn light" href="/performance.html">\u2190 Back to My Performance</a></div>` }
+}
+
+/* ------------------------------- routing ------------------------------ */
+// Show a loading message specific to what's actually being loaded, rather
+// than a generic spinner, so the student knows the app is working and what
+// it's working on.
+$("app").innerHTML=`<p class="muted">${reviewId?"Loading your result review…":testId?"Loading CBT test…":"Loading CBT Arena…"}</p>`;
+GB.requireAuth().then(async ok=>{
+  if(!ok) return;
+  try{const dash=await GB.api("/api/dashboard");Object.assign(me,dash.user||{});}catch{}
+  try{
+    await GBUI.loadSubjectCatalog();
+    if(reviewId) loadReview();
+    else if(testId) startTest();
+    else if(bankMode||location.hash==="#topic-practice"||location.hash==="#question-bank") showQuestionBank(location.hash==="#topic-practice"?"topic":"all");
+    else loadTests();
+  }catch(e){
+    // Prevent an indefinite loading indicator if something above throws
+    // before reaching a screen that handles its own errors.
+    $("app").innerHTML=`<div class="card"><p class="error">${esc(e.message||"The CBT Arena could not be loaded. Please try again.")}</p><button class="btn light" type="button" onclick="location.reload()">Retry</button></div>`;
+  }
+});
+</script></body></html>

@@ -1,0 +1,9 @@
+Gifted Brains EduSpace v11.3.12
+
+Question extractor smart-cleaning and final QA:
+- Filters source-only artefacts from extracted questions, options and explanations (publisher URLs, download lines, page counters, subject/year headers, and standalone figure labels).
+- Removes figure labels such as “Fig. 2” while preserving the underlying image/question relationship and retaining genuine “the diagram” wording where appropriate.
+- Applies the same cleanup to shared passage/group text, options, and extracted reasons/explanations.
+- Preserves real mathematical operators such as > after HTML-entity decoding.
+- Retains linked passage/comprehension/cloze groups and shared-image behavior.
+- Final syntax, EdgeOne structure, archive integrity, and extractor-cleaning regression checks passed.
