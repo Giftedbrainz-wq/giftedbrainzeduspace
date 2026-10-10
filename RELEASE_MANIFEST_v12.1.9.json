@@ -1,0 +1,17 @@
+{
+  "version": "12.1.9",
+  "type": "student",
+  "changes": [
+    "CBT launch branding and play button",
+    "CBT return-section preservation",
+    "CBT student-name results",
+    "single support WhatsApp number",
+    "standalone account activation",
+    "responsive account layout",
+    "stronger AI tutor reasoning",
+    "CBT filter/search state preserved when returning after a test",
+    "My Account stale activation-code handlers removed so profile page loads normally",
+    "Activation links now target standalone Account Activation",
+    "CBT launch/start flow hardened against double-submit and startup errors"
+  ]
+}

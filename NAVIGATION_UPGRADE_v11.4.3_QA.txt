@@ -1,0 +1,31 @@
+Gifted Brains EduSpace v11.4.3 — Navigation Upgrade
+
+Student navigation is now grouped into:
+Home
+Practice
+Learn
+Progress
+Support & Account
+
+CBT Arena is described as including Mock Tests, Question Bank & practice, keeping Question Bank as part of the existing practice area.
+
+Admin navigation is grouped into:
+Overview
+Students
+Teaching & Content
+Communication
+Admin
+with Student View under Portal.
+
+The existing visual identity, routes, pages and functionality are preserved. The mobile menu now exposes aria-expanded/aria-controls state and focuses the first navigation link when opened.
+
+QA:
+- Backend syntax PASS
+- Shared UI syntax PASS
+- Admin inline JavaScript syntax PASS
+- CBT inline JavaScript syntax PASS
+- Dashboard inline JavaScript syntax PASS
+- Existing final QA PASS
+- EdgeOne deploy check PASS
+- No standalone Topic Practice navigation entry
+- No duplicate navigation IDs introduced

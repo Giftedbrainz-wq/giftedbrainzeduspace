@@ -1,0 +1,14 @@
+{
+  "name": "gifted-brains-eduspace",
+  "version": "12.1.9",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "verify": "node scripts/verify-edgeone.mjs",
+    "audit": "node scripts/final-audit.mjs"
+  },
+  "dependencies": {}
+}

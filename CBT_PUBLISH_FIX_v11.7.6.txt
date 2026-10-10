@@ -1,0 +1,16 @@
+v11.7.6 — CBT publishing fix
+
+Root cause:
+The Admin UI already sent PATCH /api/admin/tests/:id when clicking Publish/Unpublish,
+but the server had no PATCH /api/admin/tests/:id route. The request therefore fell
+through to "Admin endpoint not found" and the CBT could not be published/unpublished.
+
+Fix:
+Added PATCH /api/admin/tests/:id with support for published state, title, duration,
+shuffle settings, questions, question pool, selected topic IDs, and per-student
+randomization flags. Existing CBTs and results are preserved.
+
+Validation:
+- JavaScript syntax checks passed.
+- EdgeOne deployment verifier passed.
+- ZIP integrity verified.

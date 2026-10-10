@@ -1,0 +1,19 @@
+v11.7.4 — FINAL AUTHENTICATION ROOT-CAUSE FIX
+
+Root cause:
+The API handler can delegate requests to a published server-side runtime stored in
+the platform's Blob storage. An older runtime package can therefore override newer
+api-core.js code. Separately, older administrator sessions may have their token in
+gbToken rather than gbAdminToken.
+
+Final safeguards:
+1. A published runtime older than CURRENT_API_VERSION (11.7.4) is ignored.
+2. Newer published runtimes remain supported.
+3. Admin API calls use gbAdminToken, with backwards-compatible fallback to gbToken.
+4. Admin API 401 responses retry once with a different legacy token before clearing
+   the session.
+5. The Admin Console boot path accepts either admin token storage key.
+6. Service-worker minimum version and application BASE_VERSION are advanced to 11.7.4.
+7. Package version is 11.7.4.
+
+This closes both the stale-runtime override path and the legacy-token migration path.

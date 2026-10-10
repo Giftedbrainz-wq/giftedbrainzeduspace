@@ -1,0 +1,42 @@
+Gifted Brainz v10.5.8 — 1-v-1 Feature
+
+This package restores/adds the protected student 1-v-1 challenge feature without replacing the existing CBT, learning materials, dashboard, admin, or student content.
+
+Student flow:
+1. Log in as a student.
+2. Open “1-v-1 Challenge” from the student menu.
+3. Choose a subject and question count (5/10/15/20).
+4. Create a private six-digit room code and share it with another student.
+5. The second student enters the code and joins.
+6. Both students answer the same randomly selected question-bank questions.
+7. Scores are calculated server-side; the first player cannot see the other player's answers.
+8. The match finishes when both students submit/complete the question set.
+9. Recent 1-v-1 matches remain available on the 1-v-1 page.
+
+New API routes:
+POST /api/duel/create
+POST /api/duel/join
+GET  /api/duel/:id
+POST /api/duel/:id/answer
+POST /api/duel/:id/submit
+GET  /api/duels/mine
+
+The feature is authenticated and uses the existing persistent application storage. The existing student materials and CBT content were not rewritten.
+
+
+Room controls added in the final reliability update:
+- Every waiting room code expires automatically after 15 minutes.
+- A student can have only one unleft 1-v-1 room at a time (waiting, active, finished or cancelled).
+- Creating or joining another room is blocked until the current room is explicitly left.
+- Leaving is enforced server-side through POST /api/duel/:id/leave.
+- Expired waiting rooms are marked expired and cannot be joined.
+
+
+Turn-based update — v10.5.8
+- The match is now a strict server-authoritative turn-by-turn state machine.
+- Player 1 answers first; Player 2 answers the same question; then the next question begins with Player 1.
+- Each turn has a 30-second server-side deadline. A timeout advances the turn without awarding a correct answer.
+- Final scores are synchronised into both the score map and player records, fixing the previous 0/10 display bug.
+- Completed matches include question-by-question review, correctness, unanswered/timed-out status and accuracy.
+- Old active duel records are migrated into the new turn-state model without discarding stored answers.
+- The legacy submit route remains compatible but now advances the current turn instead of prematurely ending the whole match.

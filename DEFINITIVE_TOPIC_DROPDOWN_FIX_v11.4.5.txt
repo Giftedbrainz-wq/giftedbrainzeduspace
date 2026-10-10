@@ -1,0 +1,20 @@
+Gifted Brains EduSpace v11.4.5 — Definitive Topic Dropdown Fix
+
+Root cause fixed: the Question Bank Topic selector was being refreshed from multiple asynchronous paths, including focus events and parallel startup calls. Those refreshes could replace the populated topic list with the placeholder again, making it appear that topics never loaded.
+
+Changes:
+- Topic manager loading no longer triggers the import/manual topic selectors.
+- Import/manual topic selectors are loaded once from the selected subject during startup and when the subject changes.
+- Removed focus-triggered reloads from the Topic selector.
+- Startup topic loading is now sequential and deterministic instead of racing through Promise.allSettled.
+- Manual refresh remains available.
+- Existing subject→topic→question import behavior remains intact.
+
+QA:
+- Admin inline JavaScript syntax: PASS
+- Backend syntax: PASS
+- App/shared UI syntax: PASS
+- Existing final QA: PASS
+- EdgeOne deployment check: PASS
+- No temporary test files included.
+- ZIP integrity: PASS

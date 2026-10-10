@@ -1,0 +1,15 @@
+GIFTED BRAINZ EDUSPACE v11.9.0 — AUTHENTICATION, AI RENDERING & STARTUP POLISH
+
+- Student authentication moved to Supabase Auth for password verification.
+- Student sessions are now server-issued HttpOnly, Secure, SameSite=Lax cookies (gb_session); student bearer tokens are no longer stored in localStorage.
+- Added server-side auth session, logout, password reset request and password update routes.
+- Existing legacy student accounts can be migrated to Supabase on their next successful login when Supabase is configured.
+- Admin browser authentication now uses a Secure HttpOnly session cookie; the shared admin bearer token is created only server-to-server for Student API proxying.
+- Activation-gated materials and assessments now clearly state the activation price: ₦3,000, with an Activate Account action.
+- Account activation screen now displays the ₦3,000 activation price.
+- Gifted Brainz AI now instructs the model to use proper LaTeX delimiters and concise-but-sufficient explanations.
+- Student AI rendering now converts Markdown emphasis to formatted text and sends mathematical LaTeX through MathJax; raw formatting syntax is not shown to students.
+- AI chat history uses the server-side per-student chat store instead of localStorage-only history, with conversation deletion support.
+- Startup redesigned: removed “Nigerian-focused digital learning”, removed the old Tutorial logo/branding, clarified Log In/Create Account actions, improved learning-space card, and fixed responsive/footer hierarchy.
+- Replaced old Tutorial logo assets with Gifted Brainz EduSpace assets in Student and Admin portals.
+- Added secure password-reset page at /reset.html.

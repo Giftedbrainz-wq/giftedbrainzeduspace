@@ -1,0 +1,8 @@
+
+QUESTION BANK IMPORT FIX
+When document extraction succeeds but all parsed questions already exist in the selected subject question bank, the importer now reports successful extraction with zero new additions instead of returning an extraction failure. This avoids the misleading “No valid questions could be extracted” message for duplicate-only imports.
+
+
+File reference/readability hardening:
+- Browser upload now falls back to FileReader when a selected File reference becomes unreadable.
+- Server-side stored-file reads retry briefly to tolerate object-storage consistency delays before reporting a read failure.

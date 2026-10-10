@@ -1,0 +1,35 @@
+GIFTED BRAINS EDUSPACE v11.7.0
+==============================
+
+CBT & Question Practice Enhancements
+
+1. Student Topic Practice
+- One, multiple or all topics.
+- Select-all/deselect-individual behavior.
+- Random combined-topic pool without equal distribution.
+- Single-topic maximum of 40.
+- Unique-question selection per attempt.
+- Clear validation when requested count exceeds unique availability.
+
+2. CBT Question Bank Builder
+- Manual and question-bank sources remain separate.
+- Question-bank source supports subject, topic selection, select all/deselect, and count.
+- Single-topic 40-question cap enforced.
+- Question-bank pool preserved structurally for per-student randomization.
+
+3. Passage Integrity
+- Passage association is stored on each question through passageId/passage.
+- Narrowest matching passage group is preferred so overlapping fallback groups cannot
+  cause an unrelated passage to be inherited.
+- Passage links survive randomization, reordering, review and copying.
+
+4. Student-only Copy Question
+- Copy Question is available during active student practice/question view.
+- Copy Question is available during correction/review.
+- Active view copies passage, question, options and embedded image when available.
+- Review copies passage, question, options, student's answer, correct answer and explanation.
+- Admin Question Bank no longer exposes Copy Question. Student Preview remains available.
+
+5. Compatibility
+- Existing CBT timing, navigation, scoring, submission, correction and results preserved.
+- Existing question records and student records are not migrated or rebuilt.

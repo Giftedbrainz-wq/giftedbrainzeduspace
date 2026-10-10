@@ -1,0 +1,15 @@
+v11.7.2 — Complete authentication-role separation fix
+
+Root cause:
+The shared frontend API client always read gbToken, even for /api/admin/* requests.
+The administrator UI stores its session in gbAdminToken, and an older/stale session
+could therefore call admin endpoints without an Authorization header, resulting in
+"Authentication required.".
+
+Fix:
+- /api/admin/* requests now authenticate with gbAdminToken.
+- All other API requests authenticate with gbToken.
+- Admin CBT topic loading uses /api/admin/topics.
+- Student topic loading remains /api/question-bank/topics.
+
+This preserves the existing student and administrator session separation.

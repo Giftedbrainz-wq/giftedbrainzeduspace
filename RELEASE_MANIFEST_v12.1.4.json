@@ -1,0 +1,13 @@
+{
+  "product": "Gifted Brainz EduSpace Student",
+  "version": "12.1.4",
+  "release": "deep-audit-corrected",
+  "status": "validated locally",
+  "liveProductionTested": false,
+  "changes": [
+    "Admin student records now include subject IDs for reliable subject-registration editing",
+    "Student password reset token revocation no longer double-increments tokenVersion",
+    "Subject rename migrates nested test and 1-v-1 question subject metadata",
+    "Version/cache buster updated after deep audit"
+  ]
+}

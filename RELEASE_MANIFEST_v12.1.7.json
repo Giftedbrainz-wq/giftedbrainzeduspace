@@ -1,0 +1,11 @@
+{
+  "product": "Gifted Brainz EduSpace Student",
+  "version": "12.1.7",
+  "release": "deep-audit-corrected",
+  "status": "validated locally",
+  "liveProductionTested": false,
+  "changes": [
+    "Fixed direct-upload read/extraction handling for metadata parts=0",
+    "Bumped active Student assets/cache to v12.1.7"
+  ]
+}

@@ -1,0 +1,24 @@
+GIFTED BRAINZ EDUSPACE v12.1.9 — STUDENT PORTAL SERVER ENVIRONMENT
+
+REQUIRED — SUPABASE AUTHENTICATION + POSTGRES DATA STORE
+SUPABASE_URL=https://YOUR-PROJECT-REF.supabase.co
+SUPABASE_ANON_KEY=<Supabase publishable key; safe only for client-side auth use>
+SUPABASE_SECRET_KEY=<Supabase Secret key; server-side only>
+
+REQUIRED — SHARED APP AUTH SECRET
+AUTH_SECRET=<new high-entropy secret; the EXACT same value must be deployed to the Admin Portal runtime>
+
+REQUIRED — GROQ AI
+GROQ_API_KEY=<your Groq API key>
+GROQ_MODEL=openai/gpt-oss-120b
+GROQ_API_URL=https://api.groq.com/openai/v1/chat/completions
+
+DATABASE SETUP
+1. Run supabase/schema.sql once in Supabase Dashboard -> SQL Editor.
+2. For an existing installation that still has legacy EdgeOne Blob data, do NOT cut production traffic to an empty Supabase database. Perform a reviewed, server-side migration of the existing application data into public.gb_kv before deployment. This release intentionally contains no legacy Blob adapter or migration script.
+3. After cutover, Supabase Postgres is the sole production application-data source. The Student API fails closed when it is unavailable and never silently falls back to EdgeOne Blob, filesystem or memory storage.
+
+SECURITY
+- Never expose SUPABASE_SECRET_KEY, AUTH_SECRET or GROQ_API_KEY in public/, HTML, browser JavaScript, GitHub, or a frontend build.
+- Do not configure ADMIN_USERNAME, ADMIN_PASSWORD or ADMIN_EMAIL on the Student Portal.
+- The browser authenticates through the application session cookie; the EdgeOne server uses the Supabase Secret key for application-data storage.

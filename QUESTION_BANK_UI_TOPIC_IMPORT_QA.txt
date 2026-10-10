@@ -1,0 +1,22 @@
+GIFTED BRAINS EDUSPACE — Question Bank UI & Topic Import Update
+
+Implemented:
+1. Question Bank admin page reorganized into a compact Subject → Topic → Questions workflow.
+2. Removed duplicate subject-option population; each admin subject selector is now populated through one deterministic function.
+3. Added Topic selector directly to Question Bank document extraction/import.
+4. Topic selector is limited to topics belonging to the chosen subject.
+5. Manual question entry includes a subject-specific topic selector.
+6. Topic management remains available with create/rename/delete and question counts.
+7. Banked Questions can be filtered by subject and topic.
+8. Existing Question Extractor/import API remains in place; selected topicId/topic is carried with imported questions.
+9. Responsive compact layout added for mobile/tablet/desktop without changing the wider application identity.
+
+QA:
+- Existing final-qa.mjs: PASS
+- EdgeOne deploy check: PASS
+- Backend JS syntax: PASS
+- Admin inline JS syntax: PASS
+- CBT inline JS syntax: PASS
+- No duplicate subject append loops remain.
+- Question Bank import topic selector present.
+- Manual topic selector present.

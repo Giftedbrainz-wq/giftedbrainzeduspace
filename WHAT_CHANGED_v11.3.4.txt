@@ -1,0 +1,8 @@
+Gifted Brainz v11.3.4
+
+CBT question-image reliability update:
+- Question images are now fetched through the authenticated client as Blob URLs before being rendered in the CBT.
+- This avoids direct <img> loading races with the short-lived file-access cookie.
+- Large question images use bounded 4 MB range requests, matching the existing material-delivery safeguards.
+- The behavior applies to standard CBTs, Question Bank practice, and multi-subject question sets because they share the same exam renderer.
+- Existing question-image upload, CBT scoring, progressive practice, subject scoping, and material download behavior is preserved.

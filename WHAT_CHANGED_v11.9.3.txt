@@ -1,0 +1,10 @@
+Gifted Brainz EduSpace Student v11.9.3
+
+DATA STORAGE ARCHITECTURE FIX
+- Supabase Postgres is now the production source of truth for all persistent EduSpace application data.
+- Added supabase/schema.sql for the server-side gb_kv application store.
+- Added scripts/migrate-edgeone-to-supabase.mjs for one-time migration of existing EdgeOne Blob data.
+- Student API no longer silently falls back to EdgeOne Blob or a local filesystem when Supabase is configured/unavailable.
+- Runtime update compatibility now routes through the same storage facade, so live updates do not accidentally write to a second storage system.
+- Supabase Secret key remains server-side only.
+- Authentication remains Supabase Auth with EduSpace HttpOnly sessions.

@@ -1,0 +1,12 @@
+GIFTED BRAINS EDUSPACE v11.5.0 — VISUAL DESIGN POLISH
+=======================================================
+
+Graphics/design only. Existing HTML structure, element IDs, data attributes,
+application routes, and functional flows are preserved.
+
+The visual layer improves the navy/gold system, cards, buttons, forms, login,
+registration, dashboard, CBT, results, Question Bank, admin pages, feedback,
+materials, announcements, help, leaderboards, duels, responsive layouts, focus
+states and motion preferences.
+
+No HTML page structure or application logic was changed in this design pass.

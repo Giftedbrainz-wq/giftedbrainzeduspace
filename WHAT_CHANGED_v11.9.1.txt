@@ -1,0 +1,6 @@
+Gifted Brainz EduSpace v11.9.1
+
+- Removed the legacy Multi-Subject Assessment Set / Question Set interface.
+- Standard CBTs now use the Sections builder for multi-part and multi-subject organization.
+- Removed legacy question-set listing and launching from the Student CBT Arena.
+- Existing question-set backend compatibility remains only for legacy stored data; the feature is no longer exposed in the application UI.

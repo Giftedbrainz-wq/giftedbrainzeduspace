@@ -1,0 +1,16 @@
+GIFTED BRAINS EDUSPACE v11.5.0
+================================
+
+Fixed:
+1. Question Bank respects the requested question count exactly. Linked comprehension
+   questions no longer expand a request for 1 question into the entire passage group.
+2. Added "Leave CBT" to the active CBT header. Leaving requires confirmation and does
+   not submit the CBT.
+3. Question reports now also surface in the Admin Feedback & Ratings area and create
+   an admin notification.
+4. Fixed rating bar fill rendering so the coloured fill is visible in the admin portal.
+
+QA:
+- node --check run on modified JS files.
+- ZIP archive integrity verified.
+- Structural string checks confirm the four requested feature hooks are present.

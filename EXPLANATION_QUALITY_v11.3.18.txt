@@ -1,0 +1,11 @@
+Gifted Brains EduSpace v11.3.18 — Student-Friendly Explanation Update
+
+- Imported explanations are now cleaned and checked for extraction/meta wording.
+- Explanations containing source/extraction commentary are replaced with a clear student-facing explanation generated from the question, options and correct answer.
+- Number-base conversions receive step-by-step explanations showing place values/powers and the resulting numeral.
+- Binary-to-decimal conversions receive step-by-step power-of-two explanations.
+- Common percentage calculations receive a direct worked explanation.
+- Existing question-bank records are upgraded during normalisation so previously imported weak explanations can be replaced.
+- Raw <sub>/<sup> tags are handled as semantic math markup instead of being exposed as ordinary text.
+- Caret notation is converted to semantic superscript markup.
+- Existing platform architecture and APIs are preserved.

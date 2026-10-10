@@ -1,0 +1,12 @@
+v11.7.1 — Admin CBT Topic Loading Fix
+
+Cause:
+The CBT builder's topic loader in public/admin.html was calling
+/api/question-bank/topics. That endpoint requires student authentication, so the
+admin console received "Authentication required.".
+
+Fix:
+The admin CBT builder now calls /api/admin/topics, which uses the existing admin
+authentication layer and is already used by the admin topic-management UI.
+
+No data model or unrelated application structure was changed.

@@ -1,0 +1,32 @@
+{
+  "version": "12.1.2",
+  "scope": "Student-only",
+  "not_included": [
+    "Admin Console",
+    "1-v-1 Arena separate app"
+  ],
+  "key_fixes": [
+    "EdgeOne direct HTML/API routing",
+    "Supabase sb_secret header handling",
+    "Gifted Brainz AI math rendering and raw-TeX fallback",
+    "1-v-1 optimistic answer UI and 1-second refresh",
+    "CBT branded Start Assessment pre-start screen",
+    "WhatsApp channel banner limited to authentication pages",
+    "real student names on leaderboards",
+    "dynamic subject catalog/icons",
+    "Student materials/collections/announcements/notifications/feedback/history routes",
+    "Student/Admin shared backend compatibility"
+  ],
+  "verification": {
+    "javascript_files": 10,
+    "javascript_syntax": "PASS",
+    "html_files": 21,
+    "html_parse": "PASS",
+    "css_balance": "PASS",
+    "edgeone_verifier": "PASS",
+    "student_required_pages": "PASS",
+    "secret_bearer_pattern": "PASS",
+    "zip_integrity": "PASS",
+    "live_production": "NOT EXERCISED"
+  }
+}

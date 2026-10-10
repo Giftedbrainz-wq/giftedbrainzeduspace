@@ -1,0 +1,17 @@
+Gifted Brains EduSpace v11.4.0 — Question Topic Assignment Fix
+
+Root cause:
+normaliseQuestion() rebuilt imported/manual question objects but discarded topicId and topic. The UI correctly sent the selected topic, but the backend dropped it before saving, so questions were stored/displayed as Uncategorized.
+
+Fix:
+- normaliseQuestion() now preserves subject, topicId and topic.
+- Question Bank import validates the selected topic belongs to the selected subject and applies that exact stable topic ID/name to every imported question before saving.
+- Manual Question Bank creation now validates and persists the selected topic.
+- Editing a question preserves/validates the selected topic.
+- Uncategorized remains only when no topic is intentionally selected.
+
+QA:
+- Backend/frontend syntax checks: PASS
+- Existing project final QA: PASS
+- EdgeOne deploy check: PASS
+- ZIP integrity: PASS

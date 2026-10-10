@@ -1,0 +1,13 @@
+{
+  "product": "Gifted Brainz EduSpace Student",
+  "version": "12.1.3",
+  "release": "deep-audit-corrected",
+  "status": "validated locally",
+  "liveProductionTested": false,
+  "changes": [
+    "Math renderer fallback no longer permanently disables future rendering",
+    "Subject catalog requests are coalesced and CBT waits for catalog",
+    "Materials download-state polling removed for performance",
+    "Service-worker/version cache bumped"
+  ]
+}

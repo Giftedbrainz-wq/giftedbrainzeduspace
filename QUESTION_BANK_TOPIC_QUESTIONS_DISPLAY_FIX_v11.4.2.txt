@@ -1,0 +1,16 @@
+Gifted Brains EduSpace v11.4.2 — Question Bank Topic Question Display Fix
+
+Fixes:
+- Topic filter is now populated even when All subjects is selected.
+- Selected topic filter value is preserved when the Question Bank reloads questions.
+- Selecting a topic now filters the actual banked questions for that topic instead of immediately resetting to All topics.
+- Added View Questions action to each topic in the Topic management panel; clicking it selects the subject/topic filter and opens the corresponding banked questions.
+- Topic counts are shown beside topics.
+
+QA:
+- Existing final QA: PASS
+- EdgeOne deployment check: PASS
+- Admin inline JavaScript syntax: PASS
+- CBT inline JavaScript syntax: PASS
+- Backend syntax: PASS
+- ZIP integrity: PASS

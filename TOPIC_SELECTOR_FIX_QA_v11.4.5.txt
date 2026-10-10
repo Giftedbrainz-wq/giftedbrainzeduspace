@@ -1,0 +1,31 @@
+Gifted Brains EduSpace v11.4.5 — Question Bank Topic Selector Fix
+
+Root cause fixed:
+- Topic selectors were reloaded on focus/open and could be reset to the loading placeholder.
+- One global request serial could cause the two independent selectors to invalidate each other.
+- loadTopicsUI could refresh the import/manual selectors with the wrong subject.
+- Topic API subject matching was case-sensitive and did not tolerate legacy blank topic subjects.
+
+Implementation:
+- Removed topic-select focus-triggered refetches.
+- Added per-selector request serials for btopic and bmTopic.
+- Added per-subject topic cache and in-flight request reuse.
+- Made selector refresh non-destructive and preserved selected topic IDs.
+- Decoupled topic management from import/manual topic selectors.
+- Added cache invalidation after topic create/rename/delete and import.
+- Kept question-bank fallback for legacy topic records.
+- Loosened backend topic subject matching for blank/differently-cased stored subjects.
+- Bumped app and service-worker cache version to v11.4.5.
+
+Verification:
+- bundled topic_ui_repro.mjs: PASS
+- headless-style selector reproduction: PASS
+- Mathematics topics populate and remain available: PASS
+- Opening/using the selector triggers no refetch: PASS
+- Selected topic persists across refresh: PASS
+- Switching Mathematics -> Biology swaps topic list correctly: PASS
+- Backend syntax: PASS
+- App/GBUI syntax: PASS
+- Existing final QA: PASS
+- EdgeOne deploy check: PASS
+- ZIP integrity: PASS

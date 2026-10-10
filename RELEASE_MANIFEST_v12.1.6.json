@@ -1,0 +1,13 @@
+{
+  "product": "Gifted Brainz EduSpace Student",
+  "version": "12.1.6",
+  "release": "deep-audit-corrected",
+  "status": "validated locally",
+  "liveProductionTested": false,
+  "changes": [
+    "Persisted repaired subject catalog metadata",
+    "Reactivated compulsory Use of English when malformed legacy data archived it",
+    "Removed duplicate internal storage error assignment",
+    "Bumped active Student assets/cache to v12.1.6"
+  ]
+}

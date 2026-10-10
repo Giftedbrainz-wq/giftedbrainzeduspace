@@ -1,0 +1,18 @@
+Gifted Brains EduSpace — Question Bank integration update
+
+Requested change:
+- Topic-Based Practice is now a feature inside Question Bank, not a standalone navigation tab.
+- Exact student-facing label: Topic-Based Practice.
+- Question Bank contains two internal modes: All Questions and Topic-Based Practice.
+- Standalone Topic Practice navigation entry removed.
+- Existing Question Bank random practice remains available.
+- Subject → Topic → Questions hierarchy remains for admin management/import.
+- Existing topic-specific extractor import remains connected to the selected subject/topic workflow.
+
+QA:
+- Backend syntax: PASS
+- Frontend JS syntax: PASS
+- Standalone topic navigation entry: absent
+- Topic-Based Practice label: present inside Question Bank
+- Existing project final QA: PASS
+- EdgeOne deploy check: PASS

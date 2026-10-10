@@ -1,0 +1,16 @@
+{
+  "product": "Gifted Brainz EduSpace Student",
+  "version": "12.1.8",
+  "type": "full-build",
+  "qa": {
+    "static": true,
+    "mockIntegration": true,
+    "productionLive": false
+  },
+  "notes": [
+    "Fixed parts=0 direct-upload reads.",
+    "Capped direct-upload signing/completion at 700 KB.",
+    "Preserved administrator-created CBT/question-bank content during content-pack upgrades.",
+    "Preserved collection subject labels during subject rename."
+  ]
+}

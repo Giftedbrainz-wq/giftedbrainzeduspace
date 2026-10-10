@@ -1,0 +1,15 @@
+Gifted Brainz EduSpace v11.9.8
+
+Post-v11.9.6 fixes implemented:
+- Fixed/strengthened password reset page handling for recovery links and clear invalid-session messaging.
+- Reset page cache/version updated.
+- Admin Overview no longer labels an aggregate endpoint failure as a central storage failure.
+- Admin counters rebuild from live Admin resources when aggregate overview fails.
+- Central storage status now explicitly distinguishes unavailable storage from non-storage overview errors.
+- Removed authoritative student authentication/profile dependence on localStorage; server HttpOnly session is authoritative.
+- AI teaching prompt upgraded to interactive tutor behaviour.
+- AI content typography upgraded toward an attractive Times-like academic serif (Source Serif 4).
+- AI Markdown and LaTeX handling strengthened, including doubled escaped delimiters.
+- Runtime API release floor synchronised to 11.9.8.
+- Legacy EdgeOne Blob recovery is no longer used as the production storage recovery path; Supabase Postgres remains authoritative.
+- Email sender configuration documented as exactly “Gifted Brainz”.

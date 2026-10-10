@@ -1,0 +1,19 @@
+Gifted Brains EduSpace v11.4.4 — Topic Loading / Question Bank Fix
+
+The Topic dropdown bug was caused by repeated async refreshes plus a race condition: opening the selector could trigger another refresh that replaced the populated list with the loading placeholder.
+
+Fixes:
+- Topic loading now uses a request serial so stale responses cannot overwrite a newer selection.
+- Existing topic data in the Question Bank is used as a fallback when the topic collection is empty.
+- The Topic selector no longer re-fetches on every focus; focus refresh is throttled.
+- Selected subject is explicitly initialised before topic loading.
+- The selector distinguishes loading, no topics, and request failure states.
+- Fresh app/service-worker versions prevent stale cached admin code from hiding the fix.
+
+Verification:
+- Selected-subject topic API returned the expected Mathematics topics.
+- Backend syntax: PASS.
+- Shared/UI syntax: PASS.
+- Existing final QA: PASS.
+- EdgeOne deploy check: PASS.
+- ZIP integrity: PASS.

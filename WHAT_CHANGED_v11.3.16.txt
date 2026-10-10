@@ -1,0 +1,12 @@
+Gifted Brains EduSpace v11.3.16
+
+Implemented:
+- Subject → Topic → Questions hierarchy with stable topic IDs.
+- Automatic migration of existing untitled questions to Uncategorized / Topic Not Assigned.
+- Topic create/rename/delete, subject scoping, duplicate prevention, question counts.
+- Topic assignment on manual question entry, import, edit, and topic filter/move support.
+- Student Topic Practice with one/multiple/all topics, combined-pool random selection, unique questions, 40-question single-topic limit and server-side limits.
+- CBT Builder topic pool selection: single, multiple, or all topics.
+- Student question reporting from CBT/Topic Practice, exact Question ID association and duplicate-pending protection.
+- Admin Question Reports with search/filter, student identification, per-question report counts, status workflow, and open-question editing.
+- Existing 1-v-1 feature retained.

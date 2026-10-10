@@ -1,0 +1,9 @@
+Gifted Brainz EduSpace v11.9.14 — Student AI + subject helper correction
+
+- Exported GBUI.mySubjects so all Student subject-based pages can call it safely.
+- Bundled MathJax 3 locally with CHTML fonts; mathematical rendering no longer depends on cdn.jsdelivr.net.
+- Fixed doubled AI TeX delimiters including \\[ ... \\] and \\( ... \\).
+- Added a bounded MathJax load fallback.
+- Removed the AI raw-text streaming bypass; every AI answer now goes through the Markdown/LaTeX renderer.
+- Added server-side AI reply normalization for escaped numbered-list punctuation and malformed TeX escaping while preserving mathematical meaning.
+- AI history reopening explicitly requests math typesetting.

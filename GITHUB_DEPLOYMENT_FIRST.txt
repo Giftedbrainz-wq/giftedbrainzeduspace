@@ -1,0 +1,26 @@
+GIFTED BRAINZ EDUSPACE v11.8.8 — REPOSITORY -> EDGEONE DEPLOYMENT
+
+1) Commit the extracted project root to the repository. The repository root must
+   contain `public/`, `node-functions/`, `scripts/`, `edgeone.json` and
+   `package.json`.
+
+2) EdgeOne Pages settings:
+   - Root directory: project root
+   - Install command: npm install
+   - Build command: node scripts/verify-edgeone.mjs
+   - Output directory: public
+
+3) Configure the required server-side environment variables listed in
+   ENVIRONMENT_VARIABLES.txt. Gifted Brainz AI uses Groq; never put the Groq
+   API key, admin password, authentication secret or storage token in the ZIP.
+   The recommended Groq model is openai/gpt-oss-120b.
+
+4) After deployment verify:
+   - /api/ping
+   - /api/health
+   - /api/status
+   - /diagnostics.html
+
+5) Test learning-material downloads with both small and large files. Student
+   material attachments are download-only, and the UI shows download progress
+   as a percentage while the file is retrieved in bounded 4 MB ranges.

@@ -1,0 +1,21 @@
+Gifted Brains EduSpace v11.4.1 — Admin Question Bank Topic Dropdown Fix
+
+Issue:
+The Question Bank extractor's Topic dropdown could remain on the placeholder and fail to display topics after the administrator changed subjects.
+
+Fix:
+- Topic dropdown now fetches fresh topics using the currently selected subject.
+- Fetch occurs on subject change and when the topic selector receives focus, so stale topic lists are refreshed.
+- A manual refresh button is provided beside the Topic dropdown.
+- The dropdown shows a loading state, then only usable topics belonging to the selected subject.
+- The selector is disabled only when there are no topics or the topic request fails; errors are surfaced to the admin.
+- The existing selected subject → topicId import path remains intact.
+- Service-worker/app cache version bumped so old cached admin.html cannot mask the fix.
+
+QA:
+- Admin topic endpoint: PASS (selected Chemistry topic returned).
+- Duplicate admin element IDs: none.
+- Backend syntax: PASS.
+- App syntax: PASS.
+- Existing final QA: PASS.
+- EdgeOne deploy check: PASS.

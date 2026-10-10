@@ -1,0 +1,8 @@
+Gifted Brainz EduSpace Student v11.9.2
+
+QA correction release.
+- Added the Notifications page required by held-result and notification flows.
+- Added Notifications to student navigation and service-worker shell.
+- Replaced legacy client-side page guards with a server-verified HttpOnly-session guard.
+- Removed stale Tutorial wording from active feedback UI.
+- Kept legacy question-set backend compatibility only; no question-set UI is exposed.

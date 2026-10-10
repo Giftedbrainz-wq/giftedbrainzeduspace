@@ -1,0 +1,8 @@
+Gifted Brains EduSpace v11.9.15 — Student stability + Subjects navigation + AI renderer hardening
+
+- Fixed sessionUser initialization and shared authentication promise lifecycle.
+- Prevented subject-dependent pages from rendering before server-validated session data is available.
+- Added a real Subjects accordion to the Student sidebar with Mathematics, Use of English, Physics, Chemistry and Biology.
+- Subject links open Learning Materials scoped to the selected subject.
+- Unified Student runtime asset cache-busting to 11.9.15 and updated service-worker runtime version.
+- Normalized invalid \= AI output and preserved local MathJax rendering/fallback.

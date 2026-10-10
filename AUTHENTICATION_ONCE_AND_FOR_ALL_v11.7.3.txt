@@ -1,0 +1,20 @@
+v11.7.3 — Authentication & stale-cache final fix
+
+Root cause:
+The administrator session uses gbAdminToken, while older cached versions of the
+shared client could keep using the student gbToken. The service worker could also
+keep serving the older client because its registration was pinned to an older
+cache/version.
+
+Final fix:
+- Admin API calls use gbAdminToken; student API calls use gbToken.
+- Admin CBT topic loading uses /api/admin/topics.
+- Service worker enforces a minimum runtime version of 11.7.3-auth-fix, so an old
+  cached app.js cannot pin the application to an old cache.
+- Service worker installs shell/runtime assets with no-store and same-origin
+  credentials.
+- HTML script references are versioned to 11.7.3-auth-fix to force fresh API/UI
+  assets across old caches.
+- Default application version is advanced to 11.7.3-auth-fix.
+
+Existing application logic, data structures and features are retained.

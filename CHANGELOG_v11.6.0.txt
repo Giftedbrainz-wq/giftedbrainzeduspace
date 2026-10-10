@@ -1,0 +1,10 @@
+GIFTED BRAINS EDUSPACE v11.6.0
+================================
+
+Enhancements:
+- Topic Practice supports one, multiple, or all topics, combined random pools, and single-topic maximum of 40 questions.
+- Normal CBT creation now supports Manual or Question Bank source, topic selection, question count, and per-student random pool selection.
+- Existing passage associations are preserved through extraction and CBT session presentation.
+- Admin Question Bank now includes Student Preview and Copy Question actions; copied text contains passage (when present), question and A-D options only.
+
+Existing functionality preserved; no unrelated platform rebuild.

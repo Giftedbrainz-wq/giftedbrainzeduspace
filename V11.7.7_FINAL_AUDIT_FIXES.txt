@@ -1,0 +1,9 @@
+v11.7.7 — Final audit fixes
+
+1. Advanced CURRENT_API_VERSION to 11.7.7 so an older published runtime cannot
+   override the backend that includes CBT publish/unpublish support.
+2. Advanced application/service-worker versions to 11.7.7 and updated page asset
+   references to prevent stale cached clients.
+3. Fixed Topic Practice question-count input to allow up to 100 for multi-topic
+   pools; the backend still enforces 40 for a single topic.
+4. Retained the PATCH /api/admin/tests/:id endpoint added for CBT Publish/Unpublish.

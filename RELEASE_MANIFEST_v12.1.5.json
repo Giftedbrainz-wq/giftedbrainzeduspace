@@ -1,0 +1,14 @@
+{
+  "product": "Gifted Brainz EduSpace Student",
+  "version": "12.1.5",
+  "release": "deep-audit-corrected",
+  "status": "validated locally",
+  "liveProductionTested": false,
+  "changes": [
+    "Restored any missing core subjects in partially migrated catalogs",
+    "Deduplicated catalog subject names to prevent ambiguous selectors",
+    "CBT sessions now fail safely if a session question has disappeared instead of shortening scoring",
+    "Corrected shared-backend diagnostic version text",
+    "Bumped active Student assets/cache to v12.1.5"
+  ]
+}

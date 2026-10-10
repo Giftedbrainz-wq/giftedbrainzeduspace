@@ -1,0 +1,11 @@
+v11.7.5 — topicIds scope fix
+
+Fixed a JavaScript scope error in the Admin CBT creation flow. topicIds was created
+inside the Question Bank branch but referenced later when building the /api/admin/tests
+payload, producing "topicIds is not defined".
+
+topicIds is now declared for the whole CBT submit handler and populated when the
+Question Bank source is selected. Manual CBT creation continues to send an empty
+topicIds array.
+
+Validated with Node syntax checks across application JavaScript and embedded scripts.
